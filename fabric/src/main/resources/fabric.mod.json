@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "lootexplorer",
+  "version": "${version}",
+  "name": "LootExplorer",
+  "description": "",
+  "authors": [
+    "VgLevelUp"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Vg34100"
+  },
+  "license": "MIT",
+  "icon": "assets/lootexplorer/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.vg.lootexplorer.fabric.LootExplorerFabric"
+    ],
+    "client": [
+      "net.vg.lootexplorer.fabric.client.LootExplorerFabricClient"
+    ]
+  },
+  "mixins": [
+    "lootexplorer.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.5",
+    "java": ">=21",
+    "architectury": ">=16.0.3",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

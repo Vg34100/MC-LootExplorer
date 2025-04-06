@@ -1,0 +1,38 @@
+modLoader = "javafml"
+loaderVersion = "[2,)"
+#issueTrackerURL = ""
+license = "MIT"
+
+[[mods]]
+modId = "lootexplorer"
+version = "${version}"
+displayName = "LootExplorer"
+authors = "VgLevelUp"
+description = '''
+
+'''
+#logoFile = ""
+
+[[dependencies.lootexplorer]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lootexplorer]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.5,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lootexplorer]]
+modId = "architectury"
+type = "required"
+versionRange = "[16.0.3,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[mixins]]
+config = "lootexplorer.mixins.json"

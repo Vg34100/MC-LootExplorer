@@ -1,0 +1,11 @@
+{
+  "item_group.loot_group": "Loot Tables",
+
+  "item_group.container_group": "Container Loot Tables",
+  "item_group.brushable_group": "Brushable Loot Tables",
+
+  "key.copy_loot_table": "Copy Lore",
+  "key.preview_loot_table": "Preview Loot Table",
+  "category.lootexplorer": "Loot Explorer"
+
+}
