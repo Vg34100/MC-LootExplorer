@@ -1,12 +1,9 @@
 package net.vg.lootexplorer.networking;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.vg.lootexplorer.Constants;
 
@@ -18,25 +15,16 @@ public class LootPreviewResponsePayload implements CustomPacketPayload {
     private final List<ItemStack> items;
 
     public static final Type<LootPreviewResponsePayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "loot_preview_response"));
+            Identifier.fromNamespaceAndPath(Constants.MOD_ID, "loot_preview_response"));
 
-    public static final StreamCodec<FriendlyByteBuf, LootPreviewResponsePayload> CODEC = StreamCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, LootPreviewResponsePayload> CODEC = StreamCodec.of(
             (buf, payload) -> {
                 buf.writeUtf(payload.lootTablePath);
-                buf.writeInt(payload.items.size());
-                for (ItemStack item : payload.items) {
-                    Tag nbt = ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, item).getOrThrow();
-                    buf.writeNbt((CompoundTag) nbt);
-                }
+                ItemStack.OPTIONAL_LIST_STREAM_CODEC.encode(buf, payload.items);
             },
             (buf) -> {
                 String path = buf.readUtf();
-                int count = buf.readInt();
-                List<ItemStack> items = new ArrayList<>();
-                for (int i = 0; i < count; i++) {
-                    CompoundTag tag = buf.readNbt();
-                    items.add(tag != null ? ItemStack.CODEC.parse(NbtOps.INSTANCE, tag).getOrThrow() : ItemStack.EMPTY);
-                }
+                List<ItemStack> items = new ArrayList<>(ItemStack.OPTIONAL_LIST_STREAM_CODEC.decode(buf));
                 return new LootPreviewResponsePayload(path, items);
             }
     );

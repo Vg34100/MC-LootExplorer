@@ -30,7 +30,7 @@ public class LootPreviewInventory {
 //            LootTable lootTable = level.getServer().getLootData().getLootTable(lootTableKey.location());
 
 
-        LootTable lootTable = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+        LootTable lootTable = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
 
 
 
@@ -61,9 +61,9 @@ public class LootPreviewInventory {
             };
 
             player.openMenu(provider);
-            player.displayClientMessage(Component.literal("Previewing loot table contents"), false);
+            player.sendSystemMessage(Component.literal("Previewing loot table contents"));
         } else {
-            player.displayClientMessage(Component.literal("Failed to load loot table"), true);
+            player.sendOverlayMessage(Component.literal("Failed to load loot table"));
         }
     }
 

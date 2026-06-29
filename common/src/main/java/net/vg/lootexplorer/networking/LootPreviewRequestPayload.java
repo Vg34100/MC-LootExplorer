@@ -1,18 +1,18 @@
 package net.vg.lootexplorer.networking;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.vg.lootexplorer.Constants;
 
 public class LootPreviewRequestPayload implements CustomPacketPayload {
     private final String lootTablePath;
 
     public static final Type<LootPreviewRequestPayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "loot_preview_request"));
+            Identifier.fromNamespaceAndPath(Constants.MOD_ID, "loot_preview_request"));
 
-    public static final StreamCodec<FriendlyByteBuf, LootPreviewRequestPayload> CODEC = StreamCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, LootPreviewRequestPayload> CODEC = StreamCodec.of(
             (buf, payload) -> {
                 buf.writeUtf(payload.lootTablePath);
             },

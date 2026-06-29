@@ -3,7 +3,7 @@ package net.vg.lootexplorer.util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -33,16 +33,16 @@ public class LootGenerator {
 
         try {
             // Parse the loot table location
-            ResourceLocation resourceLocation = ResourceLocation.parse(lootTableLocation);
+            Identifier resourceLocation = Identifier.parse(lootTableLocation);
             ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, resourceLocation);
 
             // Get the ServerLevel
-            ServerLevel serverLevel = player.getServer().overworld();
+            ServerLevel serverLevel = (ServerLevel) player.level();
 
             // Get the LootTable
 //            Holder<LootTable> lootTableHolder = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
 //            LootTable lootTable = lootTableHolder.value();
-            LootTable lootTable = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+            LootTable lootTable = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
             // Generate several samples of the loot table
             for (int i = 0; i < samples; i++) {
                 // Create a loot context with appropriate parameters
@@ -81,12 +81,12 @@ public class LootGenerator {
      * Different method to handle loot tables that might require different parameters
      */
     public static List<ItemStack> generateSpecificLoot(Player player, String lootTableLocation, int samples, String type) {
-        ResourceLocation resourceLocation = ResourceLocation.parse(lootTableLocation);
+        Identifier resourceLocation = Identifier.parse(lootTableLocation);
         ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, resourceLocation);
-        ServerLevel serverLevel = player.getServer().overworld();
-//        Holder<LootTable> lootTableHolder = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+        ServerLevel serverLevel = (ServerLevel) player.level();
+//        Holder<LootTable> lootTableHolder = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
 //        LootTable lootTable = lootTableHolder.value();
-        LootTable lootTable = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+        LootTable lootTable = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
 
         List<ItemStack> allItems = new ArrayList<>();
 

@@ -14,7 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -24,7 +24,8 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TypedEntityData;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.SeededContainerLoot;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -32,7 +33,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
 import net.vg.lootexplorer.Constants;
 
 import java.awt.*;
@@ -76,11 +77,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         tables.clear();
         lootTableItemMap.clear();
 
-        Predicate<ResourceLocation> filter = id -> id.getPath().startsWith("loot_table/chests") || id.getPath().startsWith("loot_table/loot") || id.getPath().startsWith("loot_table/archaeology");
+        Predicate<Identifier> filter = id -> id.getPath().startsWith("loot_table/chests") || id.getPath().startsWith("loot_table/loot") || id.getPath().startsWith("loot_table/archaeology");
 //        Predicate<ResourceLocation> filter = id -> id.getPath().startsWith("loot_table/chests/ancient_city");
         Constants.LOGGER.info("Filtering for loot tables in 'loot_table/chests' and 'loot_table/loot'");
 
-        Map<ResourceLocation, Resource> resources = resourceManager.listResources("loot_table", filter);
+        Map<Identifier, Resource> resources = resourceManager.listResources("loot_table", filter);
         Constants.LOGGER.info("Found {} resources matching the filter", resources.size());
 
 
@@ -110,7 +111,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         Constants.LOGGER.debug("Total loot tables found: {}", tables.size());
     }
 
-    private List<ItemStack> processLootTable(JsonObject lootTableJson, ResourceLocation tableId) {
+    private List<ItemStack> processLootTable(JsonObject lootTableJson, Identifier tableId) {
         List<ItemStack> items = new ArrayList<>();
         JsonArray pools = lootTableJson.getAsJsonArray("pools");
         if (pools == null) return items;
@@ -130,7 +131,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         return items;
     }
 
-    private void processEntry(JsonObject entry, List<ItemStack> items, ResourceLocation tableId) {
+    private void processEntry(JsonObject entry, List<ItemStack> items, Identifier tableId) {
         if (!entry.has("type")) return;
 
         try {
@@ -167,14 +168,14 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         }
     }
 
-    private void processItemEntry(JsonObject entry, List<ItemStack> items, ResourceLocation tableId) {
+    private void processItemEntry(JsonObject entry, List<ItemStack> items, Identifier tableId) {
         if (!entry.has("name")) {
             Constants.LOGGER.warn("Item entry missing 'name' in loot table: {}", tableId);
             return;
         }
 
         String itemName = entry.get("name").getAsString();
-        Item item = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(itemName))
+        Item item = BuiltInRegistries.ITEM.getOptional(Identifier.parse(itemName))
                 .orElse(null);
         if (item != null) {
             ItemStack stack = new ItemStack(item);
@@ -210,7 +211,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         }
     }
 
-    private boolean processFunctionForItem(ItemStack stack, JsonObject function, List<Component> lore, ResourceLocation tableId) {
+    private boolean processFunctionForItem(ItemStack stack, JsonObject function, List<Component> lore, Identifier tableId) {
         if (!function.has("function")) return false;
 
         String functionType = function.get("function").getAsString();
@@ -228,16 +229,9 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             case "minecraft:set_name":
             case "minecraft:set_components":
 
-                ResourceLocation functionId = ResourceLocation.parse(functionType);
-//                LootItemFunctionType<?> a = BuiltInRegistries.LOOT_FUNCTION_TYPE.get(functionId);
-                Optional<LootItemFunctionType<?>> functionTypeOptional = BuiltInRegistries.LOOT_FUNCTION_TYPE.getOptional(functionId);
-
-//                if (functionType == null) {
-//                    throw new IllegalArgumentException("Unknown loot function type: " + functionId);
-//                }
-//                stack.applyComponents(((SetComponentsFunctionMixin)a).getComponents());
-
-                if (functionTypeOptional.isEmpty()) {
+                Identifier functionId = Identifier.parse(functionType);
+                boolean functionExists = BuiltInRegistries.LOOT_FUNCTION_TYPE.getOptional(functionId).isPresent();
+                if (!functionExists) {
                     throw new IllegalArgumentException("Unknown loot function type: " + functionId);
                 }
 
@@ -368,7 +362,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         }
     }
 
-    public static ItemStack enchantBook(ItemStack eBook, Level level, ResourceLocation resourceLocation, int enchantLevel) {
+    public static ItemStack enchantBook(ItemStack eBook, Level level, Identifier resourceLocation, int enchantLevel) {
         System.out.println("enchantBook called with eBook: " + eBook + ", resourceLocation: " + resourceLocation + ", enchantLevel: " + enchantLevel);
 
         RegistryAccess registryAccess = level.registryAccess();
@@ -409,7 +403,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
 
 
-    private void processTagEntry(JsonObject entry, List<ItemStack> items, ResourceLocation tableId) {
+    private void processTagEntry(JsonObject entry, List<ItemStack> items, Identifier tableId) {
         if (!entry.has("name")) {
             Constants.LOGGER.warn("Tag entry missing 'name' in loot table: {}", tableId);
             return;
@@ -419,7 +413,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         if (tagName.startsWith("#")) {
             tagName = tagName.substring(1); // Remove the leading '#'
         }
-        TagKey<Item> tagKey = TagKey.create(Registries.ITEM, ResourceLocation.parse(tagName));
+        TagKey<Item> tagKey = TagKey.create(Registries.ITEM, Identifier.parse(tagName));
         Constants.LOGGER.debug("Tag entry found in {}: {}", tableId, tagName);
         // Here you would ideally get all items from the tag and add them to the item list
         // For simplicity, we're just logging it for now
@@ -474,8 +468,8 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         try {
             String tableName = table.replace(".json", "").replace("loot_table/", "");
             //
-            ResourceLocation lootTableId = ResourceLocation.parse(tableName);
-            ResourceKey<LootTable> lootTableKey = ResourceKey.create(ResourceKey.createRegistryKey(ResourceLocation.withDefaultNamespace("loot_table")), lootTableId);
+            Identifier lootTableId = Identifier.parse(tableName);
+            ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, lootTableId);
 
             // Setting the Loot Table within the container
             SeededContainerLoot lootComponent = new SeededContainerLoot(lootTableKey, 0L);
@@ -515,20 +509,20 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             ItemStack archaeologyItem = new ItemStack(itemType);
             String tableName = table.replace(".json", "").replace("loot_table/", "");
 
-            ResourceLocation lootTableId = ResourceLocation.parse(tableName);
+            Identifier lootTableId = Identifier.parse(tableName);
             Constants.LOGGER.debug("Loot table identifier: {}", lootTableId);
 
-            ResourceKey<LootTable> lootTableKey = ResourceKey.create(ResourceKey.createRegistryKey(ResourceLocation.withDefaultNamespace("loot_table")), lootTableId);
+            ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, lootTableId);
             Constants.LOGGER.debug("Loot table key: {}", lootTableKey);
 
             // Create NBT data for the block entity
             CompoundTag blockEntityNbt = new CompoundTag();
             blockEntityNbt.putString("LootTable", lootTableId.toString());
-            blockEntityNbt.putString("id", "minecraft:brushable_block");
 
-            // Create NbtComponent and set it to the block entity data
-            CustomData nbtComponent = CustomData.of(blockEntityNbt);
-            archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, nbtComponent);
+            @SuppressWarnings("unchecked")
+            TypedEntityData<BlockEntityType<?>> entityData =
+                    (TypedEntityData<BlockEntityType<?>>) (Object) TypedEntityData.of(BlockEntityType.BRUSHABLE_BLOCK, blockEntityNbt);
+            archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, entityData);
 
             Constants.LOGGER.debug("Set NBT data for archaeology item: {}", blockEntityNbt);
 
@@ -561,7 +555,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
     private static final Gson GSON = new Gson();
 
-    public static void parseLootTable(ResourceLocation id, Resource resource) {
+    public static void parseLootTable(Identifier id, Resource resource) {
 //        try (InputStreamReader reader = new InputStreamReader(resource.open())) {
 //            JsonElement json = GsonHelper.parse(reader);
 ////            GSON.fromJson(json, LootTable.class);
