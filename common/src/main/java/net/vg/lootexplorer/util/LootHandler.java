@@ -52,6 +52,8 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
     public record BrushableEntry(Item item, BlockEntityType<?> blockEntityType) {}
 
     public static List<String> tables = new ArrayList<>();
+    private static final Set<String> containerTables = new HashSet<>();
+    private static final Set<String> brushableTables = new HashSet<>();
 //    public static List<ItemStack> itemList = new ArrayList<>();
     public static List<ItemStack> containerList = new ArrayList<>();
     public static List<ItemStack> brushableList = new ArrayList<>();
@@ -103,11 +105,15 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
     protected void apply(Void object, ResourceManager resourceManager, ProfilerFiller profiler) {
         Constants.LOGGER.debug("Applying LootHandler");
         tables.clear();
+        containerTables.clear();
+        brushableTables.clear();
         lootTableItemMap.clear();
 
-        Predicate<Identifier> filter = id -> LootExplorerConfig.includes(id.getPath());
+        Predicate<Identifier> filter = id -> LootExplorerConfig.includesContainer(id.getPath())
+                || LootExplorerConfig.includesBrushable(id.getPath());
 //        Predicate<ResourceLocation> filter = id -> id.getPath().startsWith("loot_table/chests/ancient_city");
-        Constants.LOGGER.info("Filtering loot tables using configured paths: {}", LootExplorerConfig.getConfiguredPaths());
+        Constants.LOGGER.info("Filtering loot tables using container paths {} and brushable paths {}",
+                LootExplorerConfig.getContainerPaths(), LootExplorerConfig.getBrushablePaths());
 
         Map<Identifier, Resource> resources = resourceManager.listResources("loot_table", filter);
         Constants.LOGGER.info("Found {} resources matching the filter", resources.size());
@@ -123,6 +129,12 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
                 String tableName = id.toString().replace(".json", "").replace("loot_table/", "");
                 lootTableItemMap.put(tableName, itemList);
+                if (LootExplorerConfig.includesContainer(id.getPath())) {
+                    containerTables.add(id.toString());
+                }
+                if (LootExplorerConfig.includesBrushable(id.getPath())) {
+                    brushableTables.add(id.toString());
+                }
                 Constants.LOGGER.debug("Mapped loot table {} to {} items", id, itemList.size());
 
                 if (!tables.contains(id.toString())) {
@@ -474,22 +486,16 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         Constants.LOGGER.debug("Total loot tables to process: {}", tables.size());
 
         for (final String table : tables) {
-            if (!table.contains("archaeology")) {
+            if (containerTables.contains(table)) {
                 for (ItemStack chestItem : List.of(new ItemStack(Items.CHEST), new ItemStack(Items.BARREL), new ItemStack(Items.TRAPPED_CHEST))) {
                     createChestItem(table, chestItem, chestCounter);
                 }
                 for (Item container : additionalContainerItems) {
                     createChestItem(table, new ItemStack(container), chestCounter);
                 }
-                for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
-                    createArchaeologyItem(table, archaeology, BlockEntityType.BRUSHABLE_BLOCK, archaeologyCounter);
-                }
-                for (BrushableEntry archaeology : additionalBrushableItems) {
-                    createArchaeologyItem(table, archaeology.item(), archaeology.blockEntityType(), archaeologyCounter);
-                }
-                archaeologyCounter++;
                 chestCounter++;
-            } else if (table.contains("archaeology")) {
+            }
+            if (brushableTables.contains(table)) {
                 for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
                     createArchaeologyItem(table, archaeology, BlockEntityType.BRUSHABLE_BLOCK, archaeologyCounter);
                 }
