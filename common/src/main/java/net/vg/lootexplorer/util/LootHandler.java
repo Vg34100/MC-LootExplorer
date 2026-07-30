@@ -45,10 +45,14 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class LootHandler extends SimplePreparableReloadListener<Void> {
+    public record BrushableEntry(Item item, BlockEntityType<?> blockEntityType) {}
+
     public static List<String> tables = new ArrayList<>();
 //    public static List<ItemStack> itemList = new ArrayList<>();
     public static List<ItemStack> containerList = new ArrayList<>();
     public static List<ItemStack> brushableList = new ArrayList<>();
+    public static final List<Item> additionalContainerItems = new ArrayList<>();
+    public static final List<BrushableEntry> additionalBrushableItems = new ArrayList<>();
 
 
 
@@ -60,9 +64,23 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         Constants.LOGGER.debug("Registering LootHandler");
         LifecycleEvent.SERVER_STARTED.register(minecraftServer  -> {
             server = minecraftServer;
+            ModCompat.register();
             Constants.LOGGER.debug("Server started, applying LootHandler");
             new LootHandler().apply(null, server.getResourceManager(), null);
         });
+    }
+
+    public static void registerContainer(Item item) {
+        if (!additionalContainerItems.contains(item)) {
+            additionalContainerItems.add(item);
+        }
+    }
+
+    public static void registerBrushable(Item item, BlockEntityType<?> blockEntityType) {
+        BrushableEntry entry = new BrushableEntry(item, blockEntityType);
+        if (!additionalBrushableItems.contains(entry)) {
+            additionalBrushableItems.add(entry);
+        }
     }
 
     @Override
@@ -450,14 +468,23 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
                 for (ItemStack chestItem : List.of(new ItemStack(Items.CHEST), new ItemStack(Items.BARREL), new ItemStack(Items.TRAPPED_CHEST))) {
                     createChestItem(table, chestItem, chestCounter);
                 }
+                for (Item container : additionalContainerItems) {
+                    createChestItem(table, new ItemStack(container), chestCounter);
+                }
                 for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
-                    createArchaeologyItem(table, archaeology, archaeologyCounter);
+                    createArchaeologyItem(table, archaeology, BlockEntityType.BRUSHABLE_BLOCK, archaeologyCounter);
+                }
+                for (BrushableEntry archaeology : additionalBrushableItems) {
+                    createArchaeologyItem(table, archaeology.item(), archaeology.blockEntityType(), archaeologyCounter);
                 }
                 archaeologyCounter++;
                 chestCounter++;
             } else if (table.contains("archaeology")) {
                 for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
-                    createArchaeologyItem(table, archaeology, archaeologyCounter);
+                    createArchaeologyItem(table, archaeology, BlockEntityType.BRUSHABLE_BLOCK, archaeologyCounter);
+                }
+                for (BrushableEntry archaeology : additionalBrushableItems) {
+                    createArchaeologyItem(table, archaeology.item(), archaeology.blockEntityType(), archaeologyCounter);
                 }
                 archaeologyCounter++;
             }
@@ -502,7 +529,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         }
     }
 
-    private static void createArchaeologyItem(String table, Item itemType, int counter) {
+    private static void createArchaeologyItem(String table, Item itemType, BlockEntityType<?> blockEntityType, int counter) {
         try {
             Constants.LOGGER.debug("Creating archaeology item for table: {}", table);
 
@@ -521,7 +548,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
             @SuppressWarnings("unchecked")
             TypedEntityData<BlockEntityType<?>> entityData =
-                    (TypedEntityData<BlockEntityType<?>>) (Object) TypedEntityData.of(BlockEntityType.BRUSHABLE_BLOCK, blockEntityNbt);
+                    (TypedEntityData<BlockEntityType<?>>) (Object) TypedEntityData.of(blockEntityType, blockEntityNbt);
             archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, entityData);
 
             Constants.LOGGER.debug("Set NBT data for archaeology item: {}", blockEntityNbt);
