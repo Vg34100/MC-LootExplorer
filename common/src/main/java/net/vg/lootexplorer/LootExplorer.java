@@ -1,6 +1,7 @@
 package net.vg.lootexplorer;
 
 import net.vg.lootexplorer.item.ModItemGroups;
+import net.vg.lootexplorer.config.LootExplorerConfig;
 import net.vg.lootexplorer.util.LootHandler;
 import net.vg.lootexplorer.util.ModKeyMaps;
 
@@ -10,6 +11,7 @@ public final class LootExplorer {
     public static void init() {
         // Write common init code here.
         Constants.LOGGER.info("Initializing Loot Explorer");
+        LootExplorerConfig.load();
 
         // Register the creative tab
         ModItemGroups.register();

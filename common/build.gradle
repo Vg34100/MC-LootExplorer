@@ -9,4 +9,7 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
 
     implementation "dev.architectury:architectury:$rootProject.architectury_api_version"
+
+    // JEI is optional. This API is only used when JEI discovers LootExplorer's plugin.
+    compileOnly "mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}"
 }

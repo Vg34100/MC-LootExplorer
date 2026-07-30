@@ -34,5 +34,12 @@ versionRange = "[20.0.7,)"
 ordering = "AFTER"
 side = "BOTH"
 
+[[dependencies.lootexplorer]]
+modId = "jei"
+type = "optional"
+versionRange = "[29,)"
+ordering = "NONE"
+side = "BOTH"
+
 [[mixins]]
 config = "lootexplorer.mixins.json"

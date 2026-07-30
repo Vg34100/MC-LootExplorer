@@ -25,6 +25,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.TypedEntityData;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.SeededContainerLoot;
@@ -35,6 +37,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
 import net.vg.lootexplorer.Constants;
+import net.vg.lootexplorer.config.LootExplorerConfig;
 
 import java.awt.*;
 import java.io.IOException;
@@ -45,6 +48,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class LootHandler extends SimplePreparableReloadListener<Void> {
+    private static final String PREVIEW_MARKER = "lootexplorer_preview";
     public record BrushableEntry(Item item, BlockEntityType<?> blockEntityType) {}
 
     public static List<String> tables = new ArrayList<>();
@@ -64,6 +68,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         Constants.LOGGER.debug("Registering LootHandler");
         LifecycleEvent.SERVER_STARTED.register(minecraftServer  -> {
             server = minecraftServer;
+            LootExplorerConfig.load();
             ModCompat.register();
             Constants.LOGGER.debug("Server started, applying LootHandler");
             new LootHandler().apply(null, server.getResourceManager(), null);
@@ -83,6 +88,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         }
     }
 
+    public static boolean isGeneratedPreview(ItemStack stack) {
+        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+        return customData != null && customData.copyTag().getBooleanOr(PREVIEW_MARKER, false);
+    }
+
     @Override
     protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
         Constants.LOGGER.debug("Preparing LootHandler");
@@ -95,9 +105,9 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         tables.clear();
         lootTableItemMap.clear();
 
-        Predicate<Identifier> filter = id -> id.getPath().startsWith("loot_table/chests") || id.getPath().startsWith("loot_table/loot") || id.getPath().startsWith("loot_table/archaeology");
+        Predicate<Identifier> filter = id -> LootExplorerConfig.includes(id.getPath());
 //        Predicate<ResourceLocation> filter = id -> id.getPath().startsWith("loot_table/chests/ancient_city");
-        Constants.LOGGER.info("Filtering for loot tables in 'loot_table/chests' and 'loot_table/loot'");
+        Constants.LOGGER.info("Filtering loot tables using configured paths: {}", LootExplorerConfig.getConfiguredPaths());
 
         Map<Identifier, Resource> resources = resourceManager.listResources("loot_table", filter);
         Constants.LOGGER.info("Found {} resources matching the filter", resources.size());
@@ -464,7 +474,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
         Constants.LOGGER.debug("Total loot tables to process: {}", tables.size());
 
         for (final String table : tables) {
-            if ((table.contains("chests") || table.contains("loot")) && !table.contains("archaeology")) {
+            if (!table.contains("archaeology")) {
                 for (ItemStack chestItem : List.of(new ItemStack(Items.CHEST), new ItemStack(Items.BARREL), new ItemStack(Items.TRAPPED_CHEST))) {
                     createChestItem(table, chestItem, chestCounter);
                 }
@@ -501,6 +511,9 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             // Setting the Loot Table within the container
             SeededContainerLoot lootComponent = new SeededContainerLoot(lootTableKey, 0L);
             chestItem.set(DataComponents.CONTAINER_LOOT, lootComponent);
+            TooltipDisplay tooltipDisplay = chestItem.getOrDefault(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT);
+            chestItem.set(DataComponents.TOOLTIP_DISPLAY, tooltipDisplay.withHidden(DataComponents.CONTAINER_LOOT, true));
+            markGeneratedPreview(chestItem);
 
 
             // Determine the color of the lore based on the table name
@@ -550,6 +563,7 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             TypedEntityData<BlockEntityType<?>> entityData =
                     (TypedEntityData<BlockEntityType<?>>) (Object) TypedEntityData.of(blockEntityType, blockEntityNbt);
             archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, entityData);
+            markGeneratedPreview(archaeologyItem);
 
             Constants.LOGGER.debug("Set NBT data for archaeology item: {}", blockEntityNbt);
 
@@ -581,6 +595,10 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
     }
 
     private static final Gson GSON = new Gson();
+
+    private static void markGeneratedPreview(ItemStack stack) {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putBoolean(PREVIEW_MARKER, true));
+    }
 
     public static void parseLootTable(Identifier id, Resource resource) {
 //        try (InputStreamReader reader = new InputStreamReader(resource.open())) {
