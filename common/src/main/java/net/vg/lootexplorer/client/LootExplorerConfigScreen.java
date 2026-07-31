@@ -29,12 +29,12 @@ public final class LootExplorerConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        containers.collect();
+        brushables.collect();
         rebuild();
     }
 
     private void rebuild() {
-        containers.collect();
-        brushables.collect();
         clearWidgets();
 
         int gap = 8;
