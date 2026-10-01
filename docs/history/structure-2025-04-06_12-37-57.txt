@@ -1,0 +1,2023 @@
+Scan Report
+===========
+Date: 2025-04-06 12:37:57
+Source Directory: A:\Projects\The Experiment Lab\Minecraft\LootExplorer-1.21.5
+Output File: A:\Projects\The Experiment Lab\Minecraft\LootExplorer-1.21.5\docs\history\structure-2025-04-06_12-37-57.txt
+
+Ignored Patterns (from .gitignore):
+=================================
+- !gradle-wrapper.jar
+- $RECYCLE.BIN/**
+- **/!gradle-wrapper.jar
+- **/$RECYCLE.BIN/**
+- **/**/build/**
+- **/*.cab
+- **/*.class
+- **/*.ctxt
+- **/*.ear
+- **/*.iml
+- **/*.ipr
+- **/*.iws
+- **/*.jar
+- **/*.lnk
+- **/*.log
+- **/*.msi
+- **/*.msix
+- **/*.msm
+- **/*.msp
+- **/*.nar
+- **/*.rar
+- **/*.stackdump
+- **/*.tar.gz
+- **/*.war
+- **/*.zip
+- **/*~
+- **/.AppleDB
+- **/.AppleDesktop
+- **/.AppleDouble
+- **/.DS_Store
+- **/.DocumentRevisions-V100
+- **/.LSOverride
+- **/.Spotlight-V100
+- **/.TemporaryItems
+- **/.Trash-*
+- **/.Trashes
+- **/.VolumeIcon.icns
+- **/._*
+- **/.apdisk
+- **/.com.apple.timemachine.donotpresent
+- **/.directory
+- **/.fseventsd
+- **/.fuse_hidden*
+- **/.gradle
+- **/.gradletasknamecache
+- **/.idea/**
+- **/.idea_modules/**
+- **/.nfs*
+- **/Icon
+- **/Network Trash Folder
+- **/Temporary Items
+- **/Thumbs.db
+- **/Thumbs.db:encryptable
+- **/[Dd]esktop.ini
+- **/atlassian-ide-plugin.xml
+- **/build/**
+- **/ehthumbs.db
+- **/ehthumbs_vista.db
+- **/gradle-app.setting
+- **/hs_err_pid*
+- **/out/**
+- **/run/**
+- **/runs/**
+- *.cab
+- *.class
+- *.ctxt
+- *.ear
+- *.iml
+- *.ipr
+- *.iws
+- *.jar
+- *.lnk
+- *.log
+- *.msi
+- *.msix
+- *.msm
+- *.msp
+- *.nar
+- *.rar
+- *.stackdump
+- *.tar.gz
+- *.war
+- *.zip
+- *~
+- .AppleDB
+- .AppleDesktop
+- .AppleDouble
+- .DS_Store
+- .DocumentRevisions-V100
+- .LSOverride
+- .Spotlight-V100
+- .TemporaryItems
+- .Trash-*
+- .Trashes
+- .VolumeIcon.icns
+- ._*
+- .apdisk
+- .com.apple.timemachine.donotpresent
+- .directory
+- .fseventsd
+- .fuse_hidden*
+- .gradle
+- .gradletasknamecache
+- .idea/**
+- .idea_modules/**
+- .nfs*
+- Icon
+- Network Trash Folder
+- Temporary Items
+- Thumbs.db
+- Thumbs.db:encryptable
+- [Dd]esktop.ini
+- atlassian-ide-plugin.xml
+- build/**
+- ehthumbs.db
+- ehthumbs_vista.db
+- gradle-app.setting
+- hs_err_pid*
+- out/**
+- run/**
+- runs/**
+
+Directory Structure:
+===================
+
+LootExplorer-1.21.5/
+  .vscode/
+  common/
+    src/
+      main/
+        java/
+          net/
+            vg/
+              lootexplorer/
+                Constants.java
+                LootExplorer.java
+                client/
+                inventory/
+                  LootItemWithStats.java
+                  LootPreviewInventory.java
+                  LootPreviewMenu.java
+                  LootPreviewScreen.java
+                item/
+                  ModItemGroups.java
+                mixin/
+                  CompositeEntryBaseMixin.java
+                  EnchantRandomlyFunctionMixin.java
+                  EnchantWIthLevelsAccessor.java
+                  LootItemAccessor.java
+                  LootPoolSingletonContainerAccessor.java
+                  NestedLootTableMixin.java
+                  SetComponentsFunctionMixin.java
+                  TagEntryMixin.java
+                util/
+                  LootGenerator.java
+                  LootHandler.java
+                  LootPreviewUtils.java
+                  LootTablePreviewHelper.java
+                  ModKeyMaps.java
+                  ReflectionUtils.java
+                  TestLootHandler.java
+        resources/
+          assets/
+            lootexplorer/
+              lang/
+  docs/
+    history/
+  fabric/
+    src/
+      main/
+        java/
+          net/
+            vg/
+              lootexplorer/
+                fabric/
+                  LootExplorerFabric.java
+                  client/
+                    LootExplorerFabricClient.java
+        resources/
+  gradle/
+    wrapper/
+  neoforge/
+    src/
+      main/
+        java/
+          net/
+            vg/
+              lootexplorer/
+                neoforge/
+                  LootExplorerNeoForge.java
+        resources/
+          META-INF/
+  versions/
+
+
+File Contents:
+=============
+
+
+--- common\src\main\java\net\vg\lootexplorer\Constants.java ---
+package net.vg.lootexplorer;
+
+import dev.architectury.platform.Platform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Constants {
+
+    public static final String MOD_ID = "lootexplorer";
+    public static final String MOD_NAME = "Loot Explorer";
+    public static final String MOD_VERSION = fetchModVersion();
+
+
+    public static final Logger LOGGER = LoggerFactory.getLogger("lootexplorer");
+
+
+    public static String fetchModVersion() {
+        String DEFAULT_VERSION = "1.0.0";
+
+        if (Platform.isModLoaded(MOD_ID)) {
+            return Platform.getMod(MOD_ID).getVersion();
+        } else {
+            return DEFAULT_VERSION;
+        }
+    }
+}
+
+--- common\src\main\java\net\vg\lootexplorer\LootExplorer.java ---
+package net.vg.lootexplorer;
+
+import net.vg.lootexplorer.item.ModItemGroups;
+import net.vg.lootexplorer.util.LootHandler;
+import net.vg.lootexplorer.util.ModKeyMaps;
+
+public final class LootExplorer {
+    public static final String MOD_ID = "lootexplorer";
+
+    public static void init() {
+        // Write common init code here.
+        Constants.LOGGER.info("Initializing Loot Explorer");
+
+        // Register the creative tab
+        ModItemGroups.register();
+
+
+
+        // Register the LootHandler
+        LootHandler.register();
+        ModKeyMaps.register();
+
+        Constants.LOGGER.info("Loot Explorer initialized");
+    }
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\inventory\LootItemWithStats.java ---
+//package net.vg.lootexplorer.inventory;
+//
+//import net.minecraft.core.component.DataComponents;
+//import net.minecraft.world.item.ItemStack;
+//import net.minecraft.world.item.component.ItemLore;
+//import net.minecraft.world.item.enchantment.EnchantmentHelper;
+//import net.vg.lootexplorer.Constants;
+//
+//import java.util.Objects;
+//
+///**
+// * Represents a unique item with its statistics
+// */
+//public class LootItemWithStats {
+//    private final ItemStack itemStack;
+//    private int count;
+//    private float probability;
+//
+//    public LootItemWithStats(ItemStack itemStack, int count) {
+//        this.itemStack = itemStack;
+//        this.count = count;
+//        this.probability = 0.0f;
+//    }
+//
+//    public ItemStack getItemStack() {
+//        return itemStack;
+//    }
+//
+//    public int getCount() {
+//        return count;
+//    }
+//
+//    public void incrementCount() {
+//        count++;
+//    }
+//
+//    public float getProbability() {
+//        return probability;
+//    }
+//
+//    public void calculateProbability(int totalSimulations) {
+//        this.probability = (float) count / totalSimulations;
+//    }
+//}
+//
+///**
+// * Used as a key to identify unique items
+// */
+//class ItemKey {
+//    private final String itemId;
+//    private final int damage;
+//    private final String nbtString;
+//
+//    public ItemKey(ItemStack stack) {
+//        this.itemId = Objects.requireNonNull(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem())).toString();
+//        this.damage = stack.getDamageValue();
+//
+//        // Convert NBT to string for comparison
+//        StringBuilder nbtBuilder = new StringBuilder();
+//
+//        // Add enchantments to key
+//        EnchantmentHelper.getEnchantmentCost(stack).forEach((enchantment, level) -> {
+//            String enchantmentId = Objects.requireNonNull(
+//                    net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.getKey(enchantment)).toString();
+//            nbtBuilder.append(enchantmentId).append(':').append(level).append(',');
+//        });
+//
+//        // Add components to key
+//        stack.forEachComponent((key, value) -> {
+//            if (key != DataComponents.CUSTOM_MODEL_DATA) { // Ignore model data
+//                nbtBuilder.append(key).append(':').append(value).append(',');
+//            }
+//        });
+//
+//        this.nbtString = nbtBuilder.toString();
+//    }
+//
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//        ItemKey itemKey = (ItemKey) o;
+//        return damage == itemKey.damage &&
+//                Objects.equals(itemId, itemKey.itemId) &&
+//                Objects.equals(nbtString, itemKey.nbtString);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return Objects.hash(itemId, damage, nbtString);
+//    }
+//}
+
+--- common\src\main\java\net\vg\lootexplorer\inventory\LootPreviewInventory.java ---
+package net.vg.lootexplorer.inventory;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.vg.lootexplorer.Constants;
+
+import java.util.List;
+
+public class LootPreviewInventory {
+
+    public static void open(Player player, ResourceKey<LootTable> lootTableKey) {
+        Constants.LOGGER.info("Attempt Open before serverPlayer");
+//        ServerLevel level = serverPlayer.serverLevel();
+
+        Level level = player.level();
+        Constants.LOGGER.info("Attempt Open");
+
+//            LootTable lootTable = level.getServer().getLootData().getLootTable(lootTableKey.location());
+
+
+        LootTable lootTable = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+
+
+
+        if (lootTable != null) {
+            SimpleContainer container = new SimpleContainer(27);
+
+            LootParams lootParams = new LootParams.Builder(level.getServer().overworld())
+                    .withParameter(LootContextParams.ORIGIN, player.position())
+                    .withLuck(player.getLuck())
+                    .create(lootTable.getParamSet());
+
+            List<ItemStack> loot = lootTable.getRandomItems(lootParams);
+
+            for (int i = 0; i < Math.min(loot.size(), 27); i++) {
+                container.setItem(i, loot.get(i));
+            }
+
+            MenuProvider provider = new MenuProvider() {
+                @Override
+                public Component getDisplayName() {
+                    return Component.literal("Loot Preview");
+                }
+
+                @Override
+                public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+                    return new ChestMenu(MenuType.GENERIC_9x3, containerId, playerInventory, container, 3);
+                }
+            };
+
+            player.openMenu(provider);
+            player.displayClientMessage(Component.literal("Previewing loot table contents"), false);
+        } else {
+            player.displayClientMessage(Component.literal("Failed to load loot table"), true);
+        }
+    }
+
+}
+
+--- common\src\main\java\net\vg\lootexplorer\inventory\LootPreviewMenu.java ---
+package net.vg.lootexplorer.inventory;
+
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+
+public class LootPreviewMenu extends AbstractContainerMenu {
+
+    public LootPreviewMenu(int containerId, Inventory playerInventory) {
+        super(null, containerId);
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return true;
+    }
+
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        return ItemStack.EMPTY;
+    }
+}
+
+--- common\src\main\java\net\vg\lootexplorer\inventory\LootPreviewScreen.java ---
+package net.vg.lootexplorer.inventory;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootTable;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class LootPreviewScreen extends Screen {
+    private static final ResourceLocation CONTAINER_BACKGROUND =
+            ResourceLocation.withDefaultNamespace("textures/gui/container/creative_inventory/tab_items.png");
+    private static final int ROWS = 7;
+    private static final int COLS = 9;
+    private float scrollOffset = 0.0F;
+    private boolean scrolling = false;
+    private boolean canScroll = false;
+
+    private final List<ItemStack> items = new ArrayList<>();
+    private int currentPage = 0;
+    private int maxPage = 0;
+
+    public LootPreviewScreen(Component title, List<ItemStack> items) {
+        super(title);
+        this.items.addAll(items);
+
+        // Calculate max pages
+        this.maxPage = Math.max(0, (int) Math.ceil((double) items.size() / (ROWS * COLS)) - 1);
+    }
+
+        @Override
+    protected void init() {
+        super.init();
+        updateCanScroll();
+    }
+
+    private void updateCanScroll() {
+        this.canScroll = this.items.size() > ROWS * COLS;
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics);
+        this.renderBg(guiGraphics, partialTick, mouseX, mouseY);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
+
+        // Render title
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
+
+        // Render page info if needed
+        if (maxPage > 0) {
+            String pageText = String.format("Page %d/%d", currentPage + 1, maxPage + 1);
+            guiGraphics.drawCenteredString(this.font, pageText, this.width / 2, this.height - 20, 0xFFFFFF);
+        }
+    }
+
+    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+        int i = (this.width - 195) / 2;
+        int j = (this.height - 136 - (18 * 2)) / 2;
+
+        // Draw the background
+        guiGraphics.blit(RenderType::guiTextured, CONTAINER_BACKGROUND, i, j, 0f, 0f, 195, 136 + (18 * 2), 256, 256);
+
+        // Draw scrollbar if needed
+        if (this.canScroll) {
+            int scrollbarPos = (int)(137 * this.scrollOffset);
+            guiGraphics.blit(RenderType::guiTextured, CONTAINER_BACKGROUND,
+                    i + 175, j + 18 + scrollbarPos,
+                    232f, 0f,
+                    12, 15,
+                    256, 256);
+        }
+
+        // Calculate which items to show based on scroll position
+        int itemIndex = this.canScroll ?
+                (int)(this.scrollOffset * (float)(Math.max(0, items.size() - (ROWS * COLS)) / COLS) + 0.5F) * COLS : 0;
+
+        // Render items
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                int index = itemIndex + row * COLS + col;
+                if (index < items.size()) {
+                    ItemStack stack = items.get(index);
+                    int x = i + 8 + col * 18;
+                    int y = j + 18 + row * 18;
+
+                    // Render the item
+                    guiGraphics.renderItem(stack, x, y);
+                    guiGraphics.renderItemDecorations(this.font, stack, x, y);
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
+
+        int i = (this.width - 195) / 2;
+        int j = (this.height - 136 - (18 * 2)) / 2;
+
+        // Handle scrollbar clicking
+        if (this.canScroll && button == 0 &&
+                mouseX >= (i + 175) && mouseX < (i + 187) &&
+                mouseY >= j && mouseY < (j + this.height)) {
+            this.scrolling = true;
+            return true;
+        }
+
+        // Handle page buttons
+        if (maxPage > 0) {
+            int buttonWidth = 50;
+            int buttonHeight = 20;
+
+            // Previous page button
+            if (currentPage > 0) {
+                int prevX = this.width / 2 - buttonWidth - 10;
+                int buttonY = this.height - 30;
+
+                if (mouseX >= prevX && mouseX < prevX + buttonWidth &&
+                        mouseY >= buttonY && mouseY < buttonY + buttonHeight) {
+                    currentPage--;
+                    return true;
+                }
+            }
+
+            // Next page button
+            if (currentPage < maxPage) {
+                int nextX = this.width / 2 + 10;
+                int buttonY = this.height - 30;
+
+                if (mouseX >= nextX && mouseX < nextX + buttonWidth &&
+                        mouseY >= buttonY && mouseY < buttonY + buttonHeight) {
+                    currentPage++;
+                    return true;
+                }
+            }
+        }
+
+        // Handle item clicking
+        int itemIndex = this.canScroll ?
+                (int)(this.scrollOffset * (float)(Math.max(0, items.size() - (ROWS * COLS)) / COLS) + 0.5F) * COLS : 0;
+
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                int index = itemIndex + row * COLS + col;
+                if (index < items.size()) {
+                    int x = i + 8 + col * 18;
+                    int y = j + 18 + row * 18;
+
+                    if (mouseX >= x && mouseX < x + 16 &&
+                            mouseY >= y && mouseY < y + 16) {
+                        // Give the player the item
+                        if (button == 0) {
+                            giveItemToPlayer(items.get(index).copy());
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void giveItemToPlayer(ItemStack stack) {
+        Player player = minecraft.player;
+        if (player == null) return;
+
+        if (player.hasInfiniteMaterials()) {
+            // Creative mode - add directly to inventory
+            if (player.getInventory().add(stack)) {
+                player.displayClientMessage(Component.literal("Added item to inventory"), false);
+            }
+        } else {
+            // Survival mode - check if can add to inventory, otherwise drop
+            if (player.getInventory().add(stack)) {
+                player.displayClientMessage(Component.literal("Added item to inventory"), false);
+            } else {
+                player.drop(stack, false);
+                player.displayClientMessage(Component.literal("Inventory full - dropped item"), false);
+            }
+        }
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (this.scrolling && this.canScroll) {
+            int i = (this.height - 136 - (18 * 2)) / 2;
+            int j = i + 18;
+            int k = j + 112;
+
+            this.scrollOffset = ((float)mouseY - (float)j - 7.5F) / ((float)(k - j) - 15.0F);
+            this.scrollOffset = Mth.clamp(this.scrollOffset, 0.0F, 1.0F);
+            return true;
+        } else {
+            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (this.canScroll) {
+            float scrollDelta = (float)verticalAmount / (float)(items.size() / COLS - ROWS);
+            this.scrollOffset = Mth.clamp(this.scrollOffset - scrollDelta, 0.0F, 1.0F);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            this.scrolling = false;
+        }
+
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        int i = (this.width - 195) / 2;
+        int j = (this.height - 136 - (18 * 2)) / 2;
+
+        // Render page navigation button tooltips
+        if (maxPage > 0) {
+            int buttonWidth = 50;
+            int buttonHeight = 20;
+
+            // Previous page button
+            if (currentPage > 0) {
+                int prevX = this.width / 2 - buttonWidth - 10;
+                int buttonY = this.height - 30;
+
+                if (mouseX >= prevX && mouseX < prevX + buttonWidth &&
+                        mouseY >= buttonY && mouseY < buttonY + buttonHeight) {
+                    guiGraphics.renderTooltip(this.font, Component.literal("Previous Page"), mouseX, mouseY);
+                    return;
+                }
+            }
+
+            // Next page button
+            if (currentPage < maxPage) {
+                int nextX = this.width / 2 + 10;
+                int buttonY = this.height - 30;
+
+                if (mouseX >= nextX && mouseX < nextX + buttonWidth &&
+                        mouseY >= buttonY && mouseY < buttonY + buttonHeight) {
+                    guiGraphics.renderTooltip(this.font, Component.literal("Next Page"), mouseX, mouseY);
+                    return;
+                }
+            }
+        }
+
+        // Calculate which items to show based on scroll position
+        int itemIndex = this.canScroll ?
+                (int)(this.scrollOffset * (float)(Math.max(0, items.size() - (ROWS * COLS)) / COLS) + 0.5F) * COLS : 0;
+
+        // Handle item tooltips
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                int index = itemIndex + row * COLS + col;
+                if (index < items.size()) {
+                    int x = i + 8 + col * 18;
+                    int y = j + 18 + row * 18;
+
+                    if (mouseX >= x && mouseX < x + 16 &&
+                            mouseY >= y && mouseY < y + 16) {
+                        // Show tooltip for the item
+                        ItemStack stack = items.get(index);
+                        guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    public void renderBackground(GuiGraphics guiGraphics) {
+
+        // Render navigation buttons
+        if (maxPage > 0) {
+            int buttonWidth = 50;
+            int buttonHeight = 20;
+            int buttonY = this.height - 30;
+
+            // Previous page button
+            if (currentPage > 0) {
+                int prevX = this.width / 2 - buttonWidth - 10;
+                guiGraphics.fill(prevX, buttonY, prevX + buttonWidth, buttonY + buttonHeight, 0xFF555555);
+                guiGraphics.drawCenteredString(this.font, "Previous", prevX + buttonWidth/2, buttonY + 6, 0xFFFFFF);
+            }
+
+            // Next page button
+            if (currentPage < maxPage) {
+                int nextX = this.width / 2 + 10;
+                guiGraphics.fill(nextX, buttonY, nextX + buttonWidth, buttonY + buttonHeight, 0xFF555555);
+                guiGraphics.drawCenteredString(this.font, "Next", nextX + buttonWidth/2, buttonY + 6, 0xFFFFFF);
+            }
+        }
+    }
+}
+
+--- common\src\main\java\net\vg\lootexplorer\item\ModItemGroups.java ---
+package net.vg.lootexplorer.item;
+
+import dev.architectury.registry.CreativeTabRegistry;
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.vg.lootexplorer.Constants;
+import net.vg.lootexplorer.util.LootHandler;
+
+public class ModItemGroups {
+
+    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Constants.MOD_ID, Registries.CREATIVE_MODE_TAB);
+
+    public static final RegistrySupplier<CreativeModeTab> CONTAINER_GROUP = TABS.register(
+            "container_group",
+            () -> CreativeTabRegistry.create(builder -> {
+                builder.title(Component.translatable("item_group.container_group"));
+                builder.icon(() -> new ItemStack(Items.CHEST));
+                builder.displayItems((parameters, output) -> {
+                    LootHandler.buildChests();
+                    LootHandler.containerList.forEach(output::accept);
+                });
+            })
+    );
+
+    public static final RegistrySupplier<CreativeModeTab> BRUSHABLE_GROUP = TABS.register(
+            "brushable_group",
+            () -> CreativeTabRegistry.create(builder -> {
+                builder.title(Component.translatable("item_group.brushable_group"));
+                builder.icon(() -> new ItemStack(Items.SUSPICIOUS_SAND));
+                builder.displayItems((parameters, output) -> {
+                    LootHandler.buildChests();
+                    LootHandler.brushableList.forEach(output::accept);
+                });
+            })
+    );
+
+    public static void register() {
+        TABS.register();
+    }
+
+
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\CompositeEntryBaseMixin.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.world.level.storage.loot.entries.CompositeEntryBase;
+import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+import java.util.List;
+
+@Mixin(CompositeEntryBase.class)
+public interface CompositeEntryBaseMixin {
+    @Accessor("children")
+    List<LootPoolEntryContainer> getChildren();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\EnchantRandomlyFunctionMixin.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.core.HolderSet;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.storage.loot.functions.EnchantRandomlyFunction;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+import java.util.Optional;
+
+@Mixin(EnchantRandomlyFunction.class)
+public interface EnchantRandomlyFunctionMixin {
+    @Accessor("options")
+    Optional<HolderSet<Enchantment>> getOptions();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\EnchantWIthLevelsAccessor.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.core.HolderSet;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.storage.loot.functions.EnchantWithLevelsFunction;
+import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+import java.util.Optional;
+
+@Mixin(EnchantWithLevelsFunction.class)
+public interface EnchantWIthLevelsAccessor {
+    @Accessor("levels")
+    NumberProvider getLevels();
+
+    @Accessor("options")
+    Optional<HolderSet<Enchantment>> getOptions();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\LootItemAccessor.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.core.Holder;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(LootItem.class)
+public interface LootItemAccessor {
+    @Accessor("item")
+    Holder<Item> getItem();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\LootPoolSingletonContainerAccessor.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.world.level.storage.loot.entries.LootPoolSingletonContainer;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+import java.util.List;
+
+@Mixin(LootPoolSingletonContainer.class)
+public interface LootPoolSingletonContainerAccessor {
+    @Accessor("functions")
+    List<LootItemFunction> getFunctions();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\NestedLootTableMixin.java ---
+package net.vg.lootexplorer.mixin;
+
+import com.mojang.datafixers.util.Either;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(NestedLootTable.class)
+public interface NestedLootTableMixin {
+    @Accessor("contents")
+    Either<ResourceKey<LootTable>, LootTable> getContents();
+}
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\SetComponentsFunctionMixin.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.world.level.storage.loot.functions.SetComponentsFunction;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(SetComponentsFunction.class)
+public interface SetComponentsFunctionMixin {
+    @Accessor("components")
+    DataComponentPatch getComponents();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\mixin\TagEntryMixin.java ---
+package net.vg.lootexplorer.mixin;
+
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.storage.loot.entries.TagEntry;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(TagEntry.class)
+public interface TagEntryMixin {
+    @Accessor("tag")
+    TagKey<Item> getTag();
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\util\LootGenerator.java ---
+package net.vg.lootexplorer.util;
+
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.vg.lootexplorer.Constants;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Handles generating loot from loot tables
+ */
+public class LootGenerator {
+
+    /**
+     * Generates loot from a loot table with the given parameters
+     */
+    public static List<ItemStack> generateLoot(Player player, ResourceKey<LootTable> lootTableKey) {
+        if (player == null || player.getServer() == null) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // Get the loot table
+            LootTable lootTable = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+
+            // Create parameters for loot generation
+            ServerLevel level = player.getServer().overworld();
+            LootParams lootParams = new LootParams.Builder(level)
+                    .withParameter(LootContextParams.ORIGIN, player.position())
+                    .withLuck(player.getLuck())
+                    .create(lootTable.getParamSet());
+
+            // Generate the loot
+            return lootTable.getRandomItems(lootParams);
+        } catch (Exception e) {
+            Constants.LOGGER.error("Error generating loot from table {}", lootTableKey, e);
+            return new ArrayList<>();
+        }
+    }
+}
+
+--- common\src\main\java\net\vg\lootexplorer\util\LootHandler.java ---
+package net.vg.lootexplorer.util;
+
+import com.google.gson.*;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
+import dev.architectury.event.events.common.LifecycleEvent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.item.component.SeededContainerLoot;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.vg.lootexplorer.Constants;
+
+import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.*;
+import java.util.function.Predicate;
+
+public class LootHandler extends SimplePreparableReloadListener<Void> {
+    public static List<String> tables = new ArrayList<>();
+//    public static List<ItemStack> itemList = new ArrayList<>();
+    public static List<ItemStack> containerList = new ArrayList<>();
+    public static List<ItemStack> brushableList = new ArrayList<>();
+
+
+
+
+    public static Map<String, List<ItemStack>> lootTableItemMap = new HashMap<>();
+    private static MinecraftServer server;
+
+    public static void register() {
+        Constants.LOGGER.debug("Registering LootHandler");
+        LifecycleEvent.SERVER_STARTED.register(minecraftServer  -> {
+            server = minecraftServer;
+            Constants.LOGGER.debug("Server started, applying LootHandler");
+            new LootHandler().apply(null, server.getResourceManager(), null);
+        });
+    }
+
+    @Override
+    protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
+        Constants.LOGGER.debug("Preparing LootHandler");
+        return null;
+    }
+
+    @Override
+    protected void apply(Void object, ResourceManager resourceManager, ProfilerFiller profiler) {
+        Constants.LOGGER.debug("Applying LootHandler");
+        tables.clear();
+        lootTableItemMap.clear();
+
+        Predicate<ResourceLocation> filter = id -> id.getPath().startsWith("loot_table/chests") || id.getPath().startsWith("loot_table/loot") || id.getPath().startsWith("loot_table/archaeology");
+//        Predicate<ResourceLocation> filter = id -> id.getPath().startsWith("loot_table/chests/ancient_city");
+        Constants.LOGGER.info("Filtering for loot tables in 'loot_table/chests' and 'loot_table/loot'");
+
+        Map<ResourceLocation, Resource> resources = resourceManager.listResources("loot_table", filter);
+        Constants.LOGGER.info("Found {} resources matching the filter", resources.size());
+
+
+        resources.forEach((id, resource) -> {
+            Constants.LOGGER.info("Processing loot table: {}, {}", id, resource);
+            parseLootTable(id, resource);
+
+            try (InputStreamReader reader = new InputStreamReader(resource.open())) {
+                JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                List<ItemStack> itemList = processLootTable(json, id);
+
+                String tableName = id.toString().replace(".json", "").replace("loot_table/", "");
+                lootTableItemMap.put(tableName, itemList);
+                Constants.LOGGER.debug("Mapped loot table {} to {} items", id, itemList.size());
+
+                if (!tables.contains(id.toString())) {
+                    tables.add(id.toString());
+                    Constants.LOGGER.debug("Added loot table to list: {}", id);
+                } else {
+                    Constants.LOGGER.debug("Loot table already in list: {}", id);
+                }
+            } catch (Exception e) {
+                Constants.LOGGER.error("Error processing loot table: {}", id, e);
+            }
+        });
+
+        Constants.LOGGER.debug("Total loot tables found: {}", tables.size());
+    }
+
+    private List<ItemStack> processLootTable(JsonObject lootTableJson, ResourceLocation tableId) {
+        List<ItemStack> items = new ArrayList<>();
+        JsonArray pools = lootTableJson.getAsJsonArray("pools");
+        if (pools == null) return items;
+
+        for (JsonElement poolElement : pools) {
+            JsonObject pool = poolElement.getAsJsonObject();
+            JsonArray entries = pool.getAsJsonArray("entries");
+            if (entries == null) continue;
+
+            for (JsonElement entryElement : entries) {
+                if (entryElement.isJsonObject()) {
+                    JsonObject entry = entryElement.getAsJsonObject();
+                    processEntry(entry, items, tableId);
+                }
+            }
+        }
+        return items;
+    }
+
+    private void processEntry(JsonObject entry, List<ItemStack> items, ResourceLocation tableId) {
+        if (!entry.has("type")) return;
+
+        try {
+            String type = entry.has("type") ? entry.get("type").getAsString() : "";
+            switch (type) {
+                case "minecraft:item":
+                    processItemEntry(entry, items, tableId);
+                    break;
+                case "minecraft:tag":
+                    processTagEntry(entry, items, tableId);
+                    break;
+                case "minecraft:loot_table":
+//                    Constants.LOGGER.debug("Nested loot table found in {}: {}", tableId, entry.get("value").getAsString());
+                    break;
+                case "minecraft:group":
+                case "minecraft:sequence":
+                case "minecraft:alternatives":
+                    if (entry.has("children")) {
+                        JsonArray children = entry.getAsJsonArray("children");
+                        for (JsonElement child : children) {
+                            if (child.isJsonObject()) {
+                                processEntry(child.getAsJsonObject(), items, tableId);
+                            }
+                        }
+                    }
+                    break;
+                default:
+//                    Constants.LOGGER.warn("Unknown or missing entry type in {}: {}", tableId, type);
+            }
+        } catch (Exception e) {
+            Constants.LOGGER.error("Error processing entry in loot table {}: {}", tableId, e.getMessage());
+            // Optionally, you can add more detailed logging here
+            // Constants.LOGGER.error("Full stack trace:", e);
+        }
+    }
+
+    private void processItemEntry(JsonObject entry, List<ItemStack> items, ResourceLocation tableId) {
+        if (!entry.has("name")) {
+            Constants.LOGGER.warn("Item entry missing 'name' in loot table: {}", tableId);
+            return;
+        }
+
+        String itemName = entry.get("name").getAsString();
+        Item item = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(itemName))
+                .orElse(null);
+        if (item != null) {
+            ItemStack stack = new ItemStack(item);
+            List<Component> lore = new ArrayList<>();
+            boolean isEnchanted = false;
+
+            // Process functions for additional information (e.g., enchantments)
+            if (entry.has("functions")) {
+                JsonArray functions = entry.getAsJsonArray("functions");
+                for (JsonElement functionElement : functions) {
+                    if (functionElement.isJsonObject()) {
+                        JsonObject function = functionElement.getAsJsonObject();
+                        isEnchanted |= processFunctionForItem(stack, function, lore, tableId);
+                    }
+                }
+            }
+
+            if (!lore.isEmpty()) {
+                stack.set(DataComponents.LORE, new ItemLore(lore));
+            }
+
+            if (isEnchanted) {
+                stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+                Component nameComponent = Component.literal("Enchanted " + stack.getHoverName().getString())
+                        .withStyle(stack.is(Items.BOOK) ? ChatFormatting.YELLOW : ChatFormatting.AQUA);
+                stack.set(DataComponents.ITEM_NAME, nameComponent);
+            }
+
+            items.add(stack);
+            Constants.LOGGER.debug("Added item {} to loot table: {}", item.getDescriptionId(), tableId);
+        } else {
+            Constants.LOGGER.warn("Unknown item in loot table {}: {}", tableId, itemName);
+        }
+    }
+
+    private boolean processFunctionForItem(ItemStack stack, JsonObject function, List<Component> lore, ResourceLocation tableId) {
+        if (!function.has("function")) return false;
+
+        String functionType = function.get("function").getAsString();
+        Constants.LOGGER.info("Processing function {} for item in table {}", functionType, tableId);
+        boolean isEnchanted = false;
+
+        switch (functionType) {
+            case "minecraft:set_enchantments":
+                isEnchanted = handleSetEnchantments(function, lore);
+                break;
+            case "minecraft:enchant_with_levels":
+            case "minecraft:enchant_randomly":
+                isEnchanted = handleEnchantRandomly(function, lore);
+                break;
+            case "minecraft:set_name":
+            case "minecraft:set_components":
+
+                ResourceLocation functionId = ResourceLocation.parse(functionType);
+//                LootItemFunctionType<?> a = BuiltInRegistries.LOOT_FUNCTION_TYPE.get(functionId);
+                Optional<LootItemFunctionType<?>> functionTypeOptional = BuiltInRegistries.LOOT_FUNCTION_TYPE.getOptional(functionId);
+
+//                if (functionType == null) {
+//                    throw new IllegalArgumentException("Unknown loot function type: " + functionId);
+//                }
+//                stack.applyComponents(((SetComponentsFunctionMixin)a).getComponents());
+
+                if (functionTypeOptional.isEmpty()) {
+                    throw new IllegalArgumentException("Unknown loot function type: " + functionId);
+                }
+
+//                LootItemFunctionType<?> functionTypetyoe = functionTypeOptional.get();
+
+                break;
+            case "minecraft:set_count":
+                break;
+            // Add other cases as needed
+            default:
+                Constants.LOGGER.debug("Unhandled function type: {}", functionType);
+        }
+
+        return isEnchanted;
+    }
+
+    private boolean handleSetEnchantments(JsonObject function, List<Component> lore) {
+        if (function.has("enchantments")) {
+            JsonObject enchantments = function.getAsJsonObject("enchantments");
+            for (Map.Entry<String, JsonElement> entry : enchantments.entrySet()) {
+                String enchantmentId = entry.getKey();
+                JsonElement levelElement = entry.getValue();
+                String levelString = getLevelString(levelElement);
+                lore.add(Component.literal(enchantmentId + " " + levelString).withStyle(ChatFormatting.GRAY));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private String getLevelString(JsonElement levelElement) {
+        if (levelElement.isJsonPrimitive()) {
+            return levelElement.getAsString();
+        } else if (levelElement.isJsonObject()) {
+            JsonObject levelObject = levelElement.getAsJsonObject();
+            if (levelObject.has("min") && levelObject.has("max")) {
+                JsonElement maxElement = levelObject.get("max");
+                if (maxElement.isJsonObject()) {
+                    // Handle the case where max is an object with min and max
+                    JsonObject maxObject = maxElement.getAsJsonObject();
+                    int minLevel = levelObject.get("min").getAsInt();
+                    int maxMin = maxObject.get("min").getAsInt();
+                    int maxMax = maxObject.get("max").getAsInt();
+                    return minLevel + "-" + maxMin + "(" + maxMax + ")";
+                } else {
+                    // Handle the simple min-max case
+                    int min = levelObject.get("min").getAsInt();
+                    int max = levelObject.get("max").getAsInt();
+                    return min == max ? String.valueOf(min) : min + "-" + max;
+                }
+            } else if (levelObject.has("min")) {
+                return String.valueOf(levelObject.get("min").getAsInt());
+            }
+        }
+        return "Unknown";
+    }
+
+    private boolean handleEnchantRandomly(JsonObject function, List<Component> lore) {
+        List<String> optionsList = getOptionsList(function);
+        for (String option : optionsList) {
+            lore.add(Component.literal("Random: " + option).withStyle(ChatFormatting.GRAY));
+        }
+        return true;
+    }
+
+    private List<String> getOptionsList(JsonObject function) {
+        List<String> optionsList = new ArrayList<>();
+
+        if (function.has("options")) {
+            JsonElement options = function.get("options");
+            if (options.isJsonArray()) {
+                JsonArray optionsArray = options.getAsJsonArray();
+                for (JsonElement element : optionsArray) {
+                    optionsList.add(element.getAsString());
+                }
+            } else {
+                optionsList.add(options.getAsString());
+            }
+        } else if (function.has("enchantments")) {
+            JsonElement enchantments = function.get("enchantments");
+            if (enchantments.isJsonArray()) {
+                JsonArray enchantmentsArray = enchantments.getAsJsonArray();
+                for (JsonElement element : enchantmentsArray) {
+                    optionsList.add(element.getAsString());
+                }
+            } else {
+                optionsList.add(enchantments.getAsString());
+            }
+        }
+
+        if (optionsList.isEmpty()) {
+            optionsList.add("Unknown options");
+        }
+
+        return optionsList;
+    }
+
+
+
+    private void printEnchantWithLevels(JsonObject function) {
+        System.out.println("Enchant with levels:");
+        if (function.has("levels")) {
+            int level = function.get("levels").getAsInt();
+            System.out.println("  Enchantment level: " + level);
+        } else {
+            System.out.println("  Enchantment level not specified");
+        }
+
+        boolean treasure = function.has("treasure") && function.get("treasure").getAsBoolean();
+        System.out.println("  Treasure enchantments allowed: " + treasure);
+
+        System.out.println("  Possible enchantments: All enchantments available at the specified level");
+    }
+
+    private boolean printEnchantRandomly(JsonObject function) {
+        System.out.println("Enchant randomly:");
+        if (function.has("enchantments")) {
+            JsonArray enchantments = function.getAsJsonArray("enchantments");
+            System.out.println("  Specified enchantments:");
+            for (JsonElement element : enchantments) {
+                String enchantmentId = element.getAsString();
+                System.out.println("    - " + enchantmentId);
+            }
+            return false;
+        } else {
+            System.out.println("  No specific enchantments specified. Any valid book enchantment is possible.");
+            return true;
+        }
+    }
+
+    public static ItemStack enchantBook(ItemStack eBook, Level level, ResourceLocation resourceLocation, int enchantLevel) {
+        System.out.println("enchantBook called with eBook: " + eBook + ", resourceLocation: " + resourceLocation + ", enchantLevel: " + enchantLevel);
+
+        RegistryAccess registryAccess = level.registryAccess();
+//        Optional<Holder.Reference<Enchantment>> reference = registryAccess.registryOrThrow(Registries.ENCHANTMENT).getHolder(resourceLocation);
+        Optional<Holder.Reference<Enchantment>> reference = registryAccess.lookupOrThrow(Registries.ENCHANTMENT).get(resourceLocation);
+
+
+
+        if (reference.isEmpty()) {
+            Constants.LOGGER.error("Reference was found Empty");
+            return eBook;
+        }
+
+        Optional<ResourceKey<Enchantment>> key = reference.get().unwrapKey();
+
+        if (key.isEmpty()) {
+            Constants.LOGGER.error("Key was found Empty");
+            return eBook;
+        }
+
+//        HolderGetter.Provider provider = registryAccess.asGetterLookup();
+//        Enchantment enchantment = provider.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key.get()).value();
+        Enchantment enchantment = registryAccess.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key.get()).value();
+
+
+        Holder<Enchantment> entry = Holder.direct(enchantment);
+
+        ItemEnchantments comp = eBook.getEnchantments();
+
+        ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(comp);
+        mutable.upgrade(entry, enchantLevel);
+
+        EnchantmentHelper.setEnchantments(eBook, mutable.toImmutable());
+
+        return eBook;
+    }
+
+
+
+
+    private void processTagEntry(JsonObject entry, List<ItemStack> items, ResourceLocation tableId) {
+        if (!entry.has("name")) {
+            Constants.LOGGER.warn("Tag entry missing 'name' in loot table: {}", tableId);
+            return;
+        }
+
+        String tagName = entry.get("name").getAsString();
+        if (tagName.startsWith("#")) {
+            tagName = tagName.substring(1); // Remove the leading '#'
+        }
+        TagKey<Item> tagKey = TagKey.create(Registries.ITEM, ResourceLocation.parse(tagName));
+        Constants.LOGGER.debug("Tag entry found in {}: {}", tableId, tagName);
+        // Here you would ideally get all items from the tag and add them to the item list
+        // For simplicity, we're just logging it for now
+    }
+
+    public static LootTable deserializeLootTable(Resource resource) throws IOException {
+        InputStream inputStream = resource.open();
+        JsonObject json = JsonParser.parseReader(new InputStreamReader(inputStream)).getAsJsonObject();
+
+        // Parse the JSON into a DataResult containing a Holder of LootTable
+        DataResult<Holder<LootTable>> result = LootTable.CODEC.parse(JsonOps.INSTANCE, json);
+
+        // Handle the DataResult
+        return result.resultOrPartial(Constants.LOGGER::error)
+                .map(Holder::value) // Extract the LootTable from the Holder
+                .orElse(LootTable.EMPTY); // Default to an empty loot table if parsing fails
+    }
+
+
+    public static void buildChests() {
+        Constants.LOGGER.debug("Starting buildChests method");
+//        itemList.clear();
+//        int counter = 1;
+        containerList.clear();
+        brushableList.clear();
+        int chestCounter = 1;
+        int archaeologyCounter = 1;
+
+
+        Constants.LOGGER.debug("Total loot tables to process: {}", tables.size());
+
+        for (final String table : tables) {
+            if ((table.contains("chests") || table.contains("loot")) && !table.contains("archaeology")) {
+                for (ItemStack chestItem : List.of(new ItemStack(Items.CHEST), new ItemStack(Items.BARREL), new ItemStack(Items.TRAPPED_CHEST))) {
+                    createChestItem(table, chestItem, chestCounter);
+                }
+                for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
+                    createArchaeologyItem(table, archaeology, archaeologyCounter);
+                }
+                archaeologyCounter++;
+                chestCounter++;
+            } else if (table.contains("archaeology")) {
+                for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
+                    createArchaeologyItem(table, archaeology, archaeologyCounter);
+                }
+                archaeologyCounter++;
+            }
+        }
+    }
+
+    private static void createChestItem(String table, ItemStack chestItem, int counter) {
+        try {
+            String tableName = table.replace(".json", "").replace("loot_table/", "");
+            //
+            ResourceLocation lootTableId = ResourceLocation.parse(tableName);
+            ResourceKey<LootTable> lootTableKey = ResourceKey.create(ResourceKey.createRegistryKey(ResourceLocation.withDefaultNamespace("loot_table")), lootTableId);
+
+            // Setting the Loot Table within the container
+            SeededContainerLoot lootComponent = new SeededContainerLoot(lootTableKey, 0L);
+            chestItem.set(DataComponents.CONTAINER_LOOT, lootComponent);
+
+
+            // Determine the color of the lore based on the table name
+            Component loreText;
+            if (table.contains("minecraft:")) {
+                loreText = Component.literal(tableName); // Default
+            } else {
+                loreText = Component.literal(tableName).setStyle(Style.EMPTY.withColor(0x55FF55)); // Green color
+            }
+
+            // Set the lore component
+            ItemLore loreComponent = new ItemLore(List.of(loreText));
+            chestItem.set(DataComponents.LORE, loreComponent);
+
+            // Set the custom name for the chest item
+//            String translationKey = chestItem.getDescriptionId();
+            String translationKey = chestItem.getItemName().getString();
+            Component itemTypeName = Component.translatable(translationKey);
+            Component customName = Component.literal(itemTypeName.getString() + " (#" + String.format("%04d", counter) + ")");
+            chestItem.set(DataComponents.ITEM_NAME, customName);
+
+            // Add the chest stack to the item list
+            containerList.add(chestItem);
+        } catch (Exception e) {
+            Constants.LOGGER.error("Error building chest for loot table {}", table, e);
+        }
+    }
+
+    private static void createArchaeologyItem(String table, Item itemType, int counter) {
+        try {
+            Constants.LOGGER.debug("Creating archaeology item for table: {}", table);
+
+            ItemStack archaeologyItem = new ItemStack(itemType);
+            String tableName = table.replace(".json", "").replace("loot_table/", "");
+
+            ResourceLocation lootTableId = ResourceLocation.parse(tableName);
+            Constants.LOGGER.debug("Loot table identifier: {}", lootTableId);
+
+            ResourceKey<LootTable> lootTableKey = ResourceKey.create(ResourceKey.createRegistryKey(ResourceLocation.withDefaultNamespace("loot_table")), lootTableId);
+            Constants.LOGGER.debug("Loot table key: {}", lootTableKey);
+
+            // Create NBT data for the block entity
+            CompoundTag blockEntityNbt = new CompoundTag();
+            blockEntityNbt.putString("LootTable", lootTableId.toString());
+            blockEntityNbt.putString("id", "minecraft:brushable_block");
+
+            // Create NbtComponent and set it to the block entity data
+            CustomData nbtComponent = CustomData.of(blockEntityNbt);
+            archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, nbtComponent);
+
+            Constants.LOGGER.debug("Set NBT data for archaeology item: {}", blockEntityNbt);
+
+
+            Component loreText;
+            if (table.contains("archaeology") && table.contains("minecraft:")) {
+                loreText = Component.literal(tableName).setStyle(Style.EMPTY.withColor(Color.CYAN.getRGB()));
+            } else if (table.contains("minecraft:")){
+                loreText = Component.literal(tableName);
+            } else {
+                loreText = Component.literal(tableName).setStyle(Style.EMPTY.withColor(0x55FF55)); // Green color
+            }
+
+            ItemLore loreComponent = new ItemLore(List.of(loreText));
+            archaeologyItem.set(DataComponents.LORE, loreComponent);
+
+            // Set custom name
+//            String translationKey = archaeologyItem.getDescriptionId();
+            String translationKey = archaeologyItem.getItemName().getString();
+            Component itemTypeName = Component.translatable(translationKey);
+            Component customName = Component.literal(itemTypeName.getString() + " (#" + String.format("%04d", counter) + ")");
+            archaeologyItem.set(DataComponents.ITEM_NAME, customName);
+
+            // Add the archaeology item to the item list
+            brushableList.add(archaeologyItem);
+        } catch (Exception e) {
+            Constants.LOGGER.error("Error building archaeology item for loot table {}", table, e);
+        }
+    }
+
+    private static final Gson GSON = new Gson();
+
+    public static void parseLootTable(ResourceLocation id, Resource resource) {
+//        try (InputStreamReader reader = new InputStreamReader(resource.open())) {
+//            JsonElement json = GsonHelper.parse(reader);
+////            GSON.fromJson(json, LootTable.class);
+////            LootTable lootTable = GSON.fromJson(json, LootTable.class);
+//            LootTables.deserialize(json);
+//            BuiltInLootTables.
+//
+//
+//            // Access pools using reflection
+//            List<LootPool> lootPools = ReflectionUtils.getPrivateFieldValue(LootTable.class, lootTable, "pools");
+//
+//            // Iterate through pools
+//            for (LootPool pool : lootPools) {
+//                // Process each pool as needed
+//                System.out.println("Processing pool: " + pool);
+//            }
+//        } catch (IOException e) {
+//            Constants.LOGGER.error("Error parsing loot table: " + id, e);
+//        }
+    }
+
+}
+
+--- common\src\main\java\net\vg\lootexplorer\util\LootPreviewUtils.java ---
+//package net.vg.lootexplorer.util;
+//
+//import net.minecraft.client.Minecraft;
+//import net.minecraft.network.chat.Component;
+//import net.minecraft.resources.ResourceKey;
+//import net.minecraft.resources.ResourceLocation;
+//import net.minecraft.world.entity.player.Player;
+//import net.minecraft.world.item.ItemStack;
+//import net.minecraft.world.level.storage.loot.LootTable;
+//import net.vg.lootexplorer.Constants;
+//import net.vg.lootexplorer.inventory.LootPreviewMenu;
+//import net.vg.lootexplorer.inventory.LootPreviewScreen;
+//
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//public class LootPreviewUtils {
+//
+//    /**
+//     * Opens the loot preview screen for the given loot table
+//     */
+//    public static void openLootPreview(Player player, ResourceKey<LootTable> lootTableKey) {
+//        if (player.level().isClientSide()) {
+//            // Client-side only
+//            String lootTablePath = lootTableKey.location().toString();
+//            Constants.LOGGER.info("Opening loot preview for table: {}", lootTablePath);
+//
+//            // Try to get items from the LootHandler's cached map
+//            List<ItemStack> items = LootHandler.lootTableItemMap.getOrDefault(
+//                    lootTablePath, new ArrayList<>());
+//
+//            if (items.isEmpty()) {
+//                player.displayClientMessage(
+//                        Component.literal("No items found for loot table: " + lootTableKey.location()),
+//                        true
+//                );
+//                return;
+//            }
+//
+//            // Deep copy all items to preserve all NBT data, tags, and properties
+//            List<ItemStack> itemsCopy = new ArrayList<>();
+//            for (ItemStack item : items) {
+//                itemsCopy.add(item.copy());
+//            }
+//
+//            Minecraft minecraft = Minecraft.getInstance();
+//            LootPreviewMenu menu = new LootPreviewMenu(0, minecraft.player.getInventory());
+//            minecraft.setScreen(new LootPreviewScreen(
+//                    menu,
+//                    minecraft.player.getInventory(),
+//                    Component.literal("Loot Preview: " + lootTableKey.location().getPath()),
+//                    itemsCopy
+//            ));
+//        }
+//    }
+//}
+
+--- common\src\main\java\net\vg\lootexplorer\util\LootTablePreviewHelper.java ---
+package net.vg.lootexplorer.util;
+
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.vg.lootexplorer.Constants;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+public class LootTablePreviewHelper {
+
+    /**
+     * Generate a list of loot items with multiple samples to ensure variety
+     */
+    public static List<ItemStack> generateLoot(Player player, String lootTablePath) {
+        if (player.getServer() == null) {
+            return new ArrayList<>();
+        }
+
+        try {
+            List<ItemStack> allItems = new ArrayList<>();
+
+            // Clean up the path if needed
+            String tableName = lootTablePath.replace(".json", "").replace("loot_table/", "");
+
+            // Parse the loot table path
+            ResourceLocation lootTableId = ResourceLocation.parse(tableName);
+            Constants.LOGGER.info("Looking up loot table: {}", lootTableId);
+
+            // Create the resource key - match the format used in your working code
+            ResourceKey<LootTable> lootTableKey = ResourceKey.create(
+                    ResourceKey.createRegistryKey(ResourceLocation.withDefaultNamespace("loot_table")),
+                    lootTableId
+            );
+
+            // Get the loot table from the registry
+            LootTable lootTable = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
+
+            if (lootTable == null) {
+                Constants.LOGGER.error("Could not find loot table: {}", lootTableId);
+                return allItems;
+            }
+
+            // Generate multiple samples for variety
+            ServerLevel level = player.getServer().overworld();
+            for (int i = 0; i < 10; i++) {
+                // Create loot parameters
+                LootParams lootParams = new LootParams.Builder(level)
+                        .withParameter(LootContextParams.ORIGIN, player.position())
+                        .withLuck(player.getLuck())
+                        .create(lootTable.getParamSet());
+
+                // Get random items from the loot table
+                List<ItemStack> lootSample = lootTable.getRandomItems(lootParams);
+
+                // Add unique items to our collection
+                for (ItemStack item : lootSample) {
+                    if (!containsSimilarItem(allItems, item) && !item.isEmpty()) {
+                        allItems.add(item.copy());
+                    }
+                }
+            }
+
+            Constants.LOGGER.info("Generated {} items from loot table {}", allItems.size(), lootTableId);
+            return allItems;
+        } catch (Exception e) {
+            Constants.LOGGER.error("Error generating loot preview: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Check if the list already contains an item similar to the given one
+     */
+    private static boolean containsSimilarItem(List<ItemStack> items, ItemStack item) {
+        for (ItemStack existing : items) {
+            if (existing.getItem() == item.getItem() &&
+                    existing.getDamageValue() == item.getDamageValue() &&
+                    ItemStack.isSameItemSameComponents(existing, item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Start an asynchronous loot generation task to avoid freezing the game
+     */
+    public static CompletableFuture<List<ItemStack>> generateLootAsync(Player player, String lootTablePath) {
+        return CompletableFuture.supplyAsync(() -> generateLoot(player, lootTablePath));
+    }
+}
+
+--- common\src\main\java\net\vg\lootexplorer\util\ModKeyMaps.java ---
+package net.vg.lootexplorer.util;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import dev.architectury.event.events.client.ClientTickEvent;
+import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.vg.lootexplorer.Constants;
+import net.vg.lootexplorer.inventory.LootPreviewScreen;
+
+public class ModKeyMaps {
+
+    public static final KeyMapping CUSTOM_KEYMAPPING = new KeyMapping(
+            "key.copy_loot_table",
+            InputConstants.Type.KEYSYM,
+            InputConstants.KEY_O,
+            "category.lootexplorer"
+    );
+
+    public static final KeyMapping PREVIEW_LOOT_TABLE_KEY = new KeyMapping(
+            "key.preview_loot_table",
+            InputConstants.Type.KEYSYM,
+            InputConstants.KEY_INSERT,
+            "category.lootexplorer"
+    );
+
+    public static void register() {
+        KeyMappingRegistry.register(CUSTOM_KEYMAPPING);
+        KeyMappingRegistry.register(PREVIEW_LOOT_TABLE_KEY);
+
+        ClientTickEvent.CLIENT_POST.register(minecraft -> {
+            while (CUSTOM_KEYMAPPING.consumeClick()) {
+                handleCopyLootTable(minecraft);
+            }
+            while (PREVIEW_LOOT_TABLE_KEY.consumeClick()) {
+                handlePreviewLootTable(minecraft);
+            }
+        });
+    }
+
+    /**
+     * Copies the lore of the player's currently held item.
+     */
+    private static void handleCopyLootTable(Minecraft minecraft) {
+        if (minecraft.player != null && !minecraft.player.getMainHandItem().isEmpty()) {
+            ItemStack mainHandItem = minecraft.player.getMainHandItem();
+
+            if (mainHandItem.has(DataComponents.LORE)) {
+                ItemLore loreTag = mainHandItem.get(DataComponents.LORE);
+                if (loreTag != null && !loreTag.lines().isEmpty()) {
+                    Component loreText = loreTag.lines().getFirst();
+                    String loreString = loreText.getString();
+
+                    // Remove any formatting codes
+                    loreString = net.minecraft.util.StringUtil.stripColor(loreString);
+
+                    // Copy the loot table name to clipboard
+                    minecraft.keyboardHandler.setClipboard(loreString);
+
+                    // Send a message to the player
+                    minecraft.player.displayClientMessage(
+                            Component.literal("Copied loot table name to clipboard: " + loreString),
+                            true
+                    );
+                }
+            }
+        }
+    }
+
+
+    private static void handlePreviewLootTable(Minecraft minecraft) {
+        if (minecraft.player != null && !minecraft.player.getMainHandItem().isEmpty()) {
+            ItemStack mainHandItem = minecraft.player.getMainHandItem();
+
+            if (mainHandItem.has(DataComponents.LORE)) {
+                ItemLore loreTag = mainHandItem.get(DataComponents.LORE);
+                if (loreTag != null && !loreTag.lines().isEmpty()) {
+                    // Get the first line of lore, which should contain the loot table path
+                    Component loreText = loreTag.lines().getFirst();
+                    String lootTablePath = loreText.getString();
+
+                    // Remove formatting
+                    lootTablePath = net.minecraft.util.StringUtil.stripColor(lootTablePath);
+
+                    try {
+                        // Show loading message
+                        minecraft.player.displayClientMessage(
+                                Component.literal("Generating loot preview..."),
+                                false
+                        );
+
+                        // Generate loot asynchronously, passing the raw path
+                        String finalLootTablePath = lootTablePath;
+                        LootTablePreviewHelper.generateLootAsync(minecraft.player, lootTablePath)
+                                .thenAccept(items -> {
+                                    if (items.isEmpty()) {
+                                        minecraft.player.displayClientMessage(
+                                                Component.literal("No items found in loot table: " + finalLootTablePath),
+                                                false
+                                        );
+                                    } else {
+                                        // Open the preview screen with the raw path
+                                        minecraft.setScreen(new LootPreviewScreen(
+                                                Component.literal("Loot Preview: " + finalLootTablePath),
+                                                items
+                                        ));
+                                    }
+                                });
+                    } catch (Exception e) {
+                        Constants.LOGGER.error("Failed to parse loot table location: {}", lootTablePath, e);
+                        minecraft.player.displayClientMessage(
+                                Component.literal("Invalid loot table format: " + lootTablePath),
+                                true
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+--- common\src\main\java\net\vg\lootexplorer\util\ReflectionUtils.java ---
+package net.vg.lootexplorer.util;
+
+import java.lang.reflect.Field;
+
+public class ReflectionUtils {
+
+    /**
+     * Gets the value of a private field in a given class instance using reflection.
+     *
+     * @param clazz The class to access.
+     * @param instance The instance of the class from which to retrieve the field.
+     * @param fieldName The name of the field.
+     * @param <T> The type of the field's value.
+     * @param <C> The type of the class instance.
+     * @return The value of the field.
+     * @throws IllegalStateException if the field cannot be found or accessed.
+     */
+    public static <T, C> T getPrivateFieldValue(Class<C> clazz, C instance, String fieldName) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);  // Make the private field accessible
+            return (T) field.get(instance);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new IllegalStateException("Failed to access field '" + fieldName + "' in class " + clazz.getName(), e);
+        }
+    }
+}
+
+
+--- common\src\main\java\net\vg\lootexplorer\util\TestLootHandler.java ---
+package net.vg.lootexplorer.util;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.storage.loot.entries.CompositeEntryBase;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
+import net.minecraft.world.level.storage.loot.entries.TagEntry;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.functions.SetComponentsFunction;
+import net.vg.lootexplorer.mixin.*;
+
+import java.util.List;
+import java.util.Set;
+
+public class TestLootHandler {
+
+    public static void resolveEntry(LootPoolEntryContainer entry, Set<ItemLike> items) {
+        if (entry instanceof LootItem) {
+            // resolveItem
+            ItemLike item = resolveItem(((LootItemAccessor)entry).getItem().value(), ((LootPoolSingletonContainerAccessor)entry).getFunctions());
+            if (item != null) {
+                items.add(item);
+            }
+        }
+//        else if (entry instanceof NestedLootTable) {
+//            ((NestedLootTableMixin) entry).getContents().map({
+//               key ->
+//            });
+//
+//        }
+        else if (entry instanceof TagEntry) {
+            BuiltInRegistries.ITEM.getTagOrEmpty(((TagEntryMixin)entry).getTag()).forEach(
+                    item -> resolveItem(item.value(), ((LootPoolSingletonContainerAccessor)entry).getFunctions())
+            );
+        } else if (entry instanceof CompositeEntryBase) {
+            ((CompositeEntryBaseMixin)entry).getChildren().forEach( child -> resolveEntry(child, items));
+        }
+    }
+
+    public static Item resolveItem(Item item, List<LootItemFunction> functions) {
+        if (item == Items.AIR)
+            return null;
+        ItemStack itemStack = new ItemStack(item);
+
+        functions.forEach(
+                function -> {
+                    if (function instanceof SetComponentsFunction) {
+                        itemStack.applyComponents(((SetComponentsFunctionMixin)function).getComponents());
+                    }
+//                    else if (function instanceof EnchantRandomlyFunction) {
+//                        ((EnchantRandomlyFunctionMixin)function).getOptions().ifPresentOrElse();
+//                    } else if (function instanceof EnchantWithLevelsFunction) {
+////                        function.levels;
+////                        function.treasure;
+//                    }
+
+                }
+        );
+
+        return itemStack.getItem();
+    }
+}
+
+
+--- fabric\src\main\java\net\vg\lootexplorer\fabric\LootExplorerFabric.java ---
+package net.vg.lootexplorer.fabric;
+
+import net.vg.lootexplorer.LootExplorer;
+import net.fabricmc.api.ModInitializer;
+
+public final class LootExplorerFabric implements ModInitializer {
+    @Override
+    public void onInitialize() {
+        // This code runs as soon as Minecraft is in a mod-load-ready state.
+        // However, some things (like resources) may still be uninitialized.
+        // Proceed with mild caution.
+
+        // Run our common setup.
+        LootExplorer.init();
+    }
+}
+
+
+--- fabric\src\main\java\net\vg\lootexplorer\fabric\client\LootExplorerFabricClient.java ---
+package net.vg.lootexplorer.fabric.client;
+
+import net.fabricmc.api.ClientModInitializer;
+
+public final class LootExplorerFabricClient implements ClientModInitializer {
+    @Override
+    public void onInitializeClient() {
+        // This entrypoint is suitable for setting up client-specific logic, such as rendering.
+    }
+}
+
+
+--- neoforge\src\main\java\net\vg\lootexplorer\neoforge\LootExplorerNeoForge.java ---
+package net.vg.lootexplorer.neoforge;
+
+import net.vg.lootexplorer.LootExplorer;
+import net.neoforged.fml.common.Mod;
+
+@Mod(LootExplorer.MOD_ID)
+public final class LootExplorerNeoForge {
+    public LootExplorerNeoForge() {
+        // Run our common setup.
+        LootExplorer.init();
+    }
+}
+

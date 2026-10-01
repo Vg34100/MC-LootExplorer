@@ -7,6 +7,7 @@
   "key.copy_loot_table": "Copy Lore",
   "key.preview_loot_table": "Preview Loot Table",
   "category.lootexplorer": "Loot Explorer",
+  "key.category.lootexplorer.misc": "Loot Explorer",
 
   "lootexplorer.config.title": "Loot Explorer Settings",
   "lootexplorer.config.restart_note": "Changes apply when you next start a world or server.",
