@@ -81,7 +81,11 @@ public class NetworkHandler {
                     Component.literal("Loot Table: " + lootTablePath),
                     items
             );
+            //? if >=26.2 {
+            /*minecraft.gui.setScreen(screen);
+            *///? } else {
             minecraft.setScreen(screen);
+            //? }
         }
     }
 }

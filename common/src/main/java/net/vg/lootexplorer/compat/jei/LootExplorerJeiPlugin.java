@@ -22,9 +22,15 @@ public final class LootExplorerJeiPlugin implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime runtime) {
+        //? if >=26.1 {
         List<ItemStack> previews = runtime.getIngredientManager().getAllItemStacks().stream()
+        //? } else {
+        /*List<ItemStack> previews = runtime.getIngredientManager().getAllIngredients(VanillaTypes.ITEM_STACK).stream()
+        *///? }
                 .filter(LootHandler::isGeneratedPreview)
                 .toList();
-        runtime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, previews);
+        if (!previews.isEmpty()) {
+            runtime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, previews);
+        }
     }
 }

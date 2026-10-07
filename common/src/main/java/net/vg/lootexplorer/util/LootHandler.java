@@ -24,9 +24,13 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+//? if >=26.1 {
 import net.minecraft.world.item.component.TypedEntityData;
+//? }
 import net.minecraft.world.item.component.CustomData;
+//? if >=26.1 {
 import net.minecraft.world.item.component.TooltipDisplay;
+//? }
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.SeededContainerLoot;
@@ -92,7 +96,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
     public static boolean isGeneratedPreview(ItemStack stack) {
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+        //? if >=26.1 {
         return customData != null && customData.copyTag().getBooleanOr(PREVIEW_MARKER, false);
+        //? } else {
+        /*return customData != null && customData.copyTag().getBoolean(PREVIEW_MARKER);
+        *///? }
     }
 
     @Override
@@ -407,7 +415,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
         RegistryAccess registryAccess = level.registryAccess();
 //        Optional<Holder.Reference<Enchantment>> reference = registryAccess.registryOrThrow(Registries.ENCHANTMENT).getHolder(resourceLocation);
+        //? if >=26.1 {
         Optional<Holder.Reference<Enchantment>> reference = registryAccess.lookupOrThrow(Registries.ENCHANTMENT).get(resourceLocation);
+        //? } else {
+        /*Optional<Holder.Reference<Enchantment>> reference = registryAccess.registryOrThrow(Registries.ENCHANTMENT).getHolder(resourceLocation);
+        *///? }
 
 
 
@@ -497,7 +509,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             }
             if (brushableTables.contains(table)) {
                 for (Item archaeology : List.of(Items.SUSPICIOUS_GRAVEL, Items.SUSPICIOUS_SAND)) {
+                    //? if >=26.2 {
+                    /*createArchaeologyItem(table, archaeology, net.minecraft.world.level.block.entity.BlockEntityTypes.BRUSHABLE_BLOCK, archaeologyCounter);
+                    *///? } else {
                     createArchaeologyItem(table, archaeology, BlockEntityType.BRUSHABLE_BLOCK, archaeologyCounter);
+                    //? }
                 }
                 for (BrushableEntry archaeology : additionalBrushableItems) {
                     createArchaeologyItem(table, archaeology.item(), archaeology.blockEntityType(), archaeologyCounter);
@@ -517,8 +533,12 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             // Setting the Loot Table within the container
             SeededContainerLoot lootComponent = new SeededContainerLoot(lootTableKey, 0L);
             chestItem.set(DataComponents.CONTAINER_LOOT, lootComponent);
+            //? if >=26.1 {
             TooltipDisplay tooltipDisplay = chestItem.getOrDefault(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT);
             chestItem.set(DataComponents.TOOLTIP_DISPLAY, tooltipDisplay.withHidden(DataComponents.CONTAINER_LOOT, true));
+            //? } else {
+            /*chestItem.set(DataComponents.HIDE_ADDITIONAL_TOOLTIP, net.minecraft.util.Unit.INSTANCE);
+            *///? }
             markGeneratedPreview(chestItem);
 
 
@@ -536,7 +556,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
             // Set the custom name for the chest item
 //            String translationKey = chestItem.getDescriptionId();
+            //? if >=26.1 {
             String translationKey = chestItem.getItemName().getString();
+            //? } else {
+            /*String translationKey = chestItem.getHoverName().getString();
+            *///? }
             Component itemTypeName = Component.translatable(translationKey);
             Component customName = Component.literal(itemTypeName.getString() + " (#" + String.format("%04d", counter) + ")");
             chestItem.set(DataComponents.ITEM_NAME, customName);
@@ -565,10 +589,15 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
             CompoundTag blockEntityNbt = new CompoundTag();
             blockEntityNbt.putString("LootTable", lootTableId.toString());
 
+            //? if >=26.1 {
             @SuppressWarnings("unchecked")
             TypedEntityData<BlockEntityType<?>> entityData =
                     (TypedEntityData<BlockEntityType<?>>) (Object) TypedEntityData.of(blockEntityType, blockEntityNbt);
             archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, entityData);
+            //? } else {
+            /*blockEntityNbt.putString("id", BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntityType).toString());
+            archaeologyItem.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityNbt));
+            *///? }
             markGeneratedPreview(archaeologyItem);
 
             Constants.LOGGER.debug("Set NBT data for archaeology item: {}", blockEntityNbt);
@@ -588,7 +617,11 @@ public class LootHandler extends SimplePreparableReloadListener<Void> {
 
             // Set custom name
 //            String translationKey = archaeologyItem.getDescriptionId();
+            //? if >=26.1 {
             String translationKey = archaeologyItem.getItemName().getString();
+            //? } else {
+            /*String translationKey = archaeologyItem.getHoverName().getString();
+            *///? }
             Component itemTypeName = Component.translatable(translationKey);
             Component customName = Component.literal(itemTypeName.getString() + " (#" + String.format("%04d", counter) + ")");
             archaeologyItem.set(DataComponents.ITEM_NAME, customName);

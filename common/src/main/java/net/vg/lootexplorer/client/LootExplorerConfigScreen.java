@@ -1,7 +1,11 @@
 package net.vg.lootexplorer.client;
 
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//? } else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///? }
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -106,9 +110,14 @@ public final class LootExplorerConfigScreen extends Screen {
 
     @Override
     public void onClose() {
+        //? if >=26.2 {
+        /*Minecraft.getInstance().gui.setScreen(parent);
+        *///? } else {
         Minecraft.getInstance().setScreen(parent);
+        //? }
     }
 
+    //? if >=26.1 {
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         extractMenuBackground(guiGraphics);
@@ -121,6 +130,20 @@ public final class LootExplorerConfigScreen extends Screen {
         guiGraphics.centeredText(this.font, brushables.title, panelLeft + panelWidth + gap + panelWidth / 2, 56, 0xFFFFFF);
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
+    //? } else {
+    /*@Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        int gap = 8;
+        int panelWidth = Math.min(210, (this.width - 32 - gap) / 2);
+        int panelLeft = (this.width - (panelWidth * 2 + gap)) / 2;
+        guiGraphics.drawCenteredString(this.font, TITLE, this.width / 2, 16, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, RESTART_NOTE, this.width / 2, 34, 0xAAAAAA);
+        guiGraphics.drawCenteredString(this.font, containers.title, panelLeft + panelWidth / 2, 56, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, brushables.title, panelLeft + panelWidth + gap + panelWidth / 2, 56, 0xFFFFFF);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+    *///? }
 
     private static final class PathPanel {
         private final Component title;

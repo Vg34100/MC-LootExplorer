@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "icon": "assets/lootexplorer/icon.png",
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
     "main": [
       "net.vg.lootexplorer.fabric.LootExplorerFabric"
@@ -28,10 +28,10 @@
     "lootexplorer.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.19.3",
-    "minecraft": "~26.1.2",
-    "java": ">=25",
-    "architectury": ">=20.0.7",
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=${java_version}",
+    "architectury": ">=${architectury_api_version}",
     "fabric-api": "*"
   },
   "suggests": {

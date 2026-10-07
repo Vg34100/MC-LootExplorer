@@ -1,460 +1,460 @@
 # AGENTS.md
 
-This file is a reusable workflow guide for agentic work in a typical Architectury/Fabric/NeoForge Minecraft mod repo.
+This file defines the default agent workflow for LootExplorer.
 
-Use it as the first file to load before exploring the tree.
+LootExplorer is transitioning from a single-target Architectury project centered on Minecraft 26.1.2 into one maintainable Stonecutter multiversion repository.
 
-## Goals
+Detailed procedures live under `docs/development/`.
 
-- Minimize context waste.
-- Prefer fast search over broad file reading.
-- Keep user work safe in dirty trees.
-- Make changes loader-aware.
-- End with a clean, inspectable commit history.
+## Priorities
+
+1. Preserve existing LootExplorer behavior.
+2. Keep the current 26.1.2 implementation as the behavioral reference unless inspection shows a concrete defect.
+3. Port outward from the proven current implementation rather than redesigning the mod.
+4. Keep one source of truth for versions, loaders, dependencies, artifacts, and release metadata.
+5. Represent Minecraft-version drift with the smallest readable compatibility mechanism.
+6. Treat Fabric and NeoForge as separate loader axes where their APIs differ.
+7. Keep the mod client-focused. Do not invent server support or server gameplay requirements.
+8. Minimize context use and validation cost.
+9. Preserve unrelated user work.
+10. Stop when the requested acceptance evidence exists.
+
+## Desired Target Matrix
+
+The completed migration should support exactly:
+
+```text
+1.21      Fabric / NeoForge
+1.21.1    Fabric / NeoForge
+26.1      Fabric / NeoForge
+26.1.1    Fabric / NeoForge
+26.1.2    Fabric / NeoForge
+26.2      Fabric / NeoForge
+```
+
+Once the matrix exists, the registered target set must be discovered from:
+
+```text
+gradle/matrix/*.properties
+```
+
+Do not maintain duplicate hard-coded target lists when the matrix can be discovered dynamically.
+
+## Current Project Shape
+
+LootExplorer currently has a single modern source baseline around Minecraft 26.1.2.
+
+Treat that implementation as the initial canonical candidate.
+
+The migration problem is primarily:
+
+```text
+current 26.1.2 implementation
+    ->
+current adjacent versions
+    ->
+legacy 1.21.x backport
+```
+
+Do not invent historical branch archaeology if the repository does not actually contain meaningful older ports.
+
+If relevant historical branches/tags exist, inspect them only when they can answer a specific compatibility question.
+
+## Expected Compatibility Hotspots
+
+LootExplorer is a client-focused inspection/UI mod.
+
+Compatibility-sensitive areas are expected to include things such as:
+
+- screen construction and navigation;
+- screen rendering APIs;
+- widgets and GUI graphics;
+- text/component rendering;
+- mouse/keyboard input;
+- key mappings;
+- screen inspection hooks;
+- loot-table lookup/query APIs;
+- registry/resource identifiers;
+- client bootstrap;
+- Fabric client initialization;
+- NeoForge client initialization/events;
+- mixins, if present;
+- Mod Menu/config entry, if present;
+- metadata/environment declarations.
+
+These are inspection priorities only.
+
+Do not proactively rewrite all of them.
+
+## Final Repository Model
+
+After migration, responsibilities should be:
+
+- `settings.gradle` — Stonecutter target registration and early platform selection.
+- `stonecutter.gradle` — active-target and aggregate matrix tasks.
+- `build.matrix.gradle` — generic per-target Gradle configuration.
+- `gradle/matrix/*.properties` — target-specific Minecraft/loader/Java/dependency facts.
+- `common/`, `fabric/`, `neoforge/` — canonical maintained source.
+- `gradle/compat/` and/or a small compatibility source area — only where real version boundaries require it.
+- `gradle/resource-compat.gradle` — only if serialized/resource metadata differs by version.
+- `build-smart.py` — established wrapper for compile/package/runtime/release smoke.
+- `scripts/verify-matrix-artifacts.py` — release-artifact verification.
+- `scripts/smoke-release-client.py` — packaged-release-JAR client smoke.
+
+Publishing is a separate phase after conversion acceptance.
+
+Fresh-machine doctor/bootstrap work is also separate and should not block the initial conversion.
+
+## Reference Repositories
+
+Use references in this order:
+
+1. **StructureVoidable** — primary reference for the current generic migration/release architecture.
+2. **Sagittary** — secondary/deeper reference when StructureVoidable does not contain a needed mechanism.
+
+If sibling checkouts are available, use them READ-ONLY.
+
+Reuse generic architecture and proven helpers, not project-specific behavior.
+
+Do NOT copy from reference mods:
+
+- mod IDs;
+- package names;
+- publishing IDs;
+- feature assertions;
+- optional dependencies;
+- gameplay logic;
+- resource paths;
+- server assumptions;
+- project-specific compatibility code.
+
+LootExplorer must remain independently buildable without sibling repositories.
 
 ## Context Discipline
 
-- Search first. Read second. Edit last.
-- Prefer `rg --files` and `rg -n` over opening directories or large files blindly.
-- Open only the exact files on the active path.
-- Reuse known build/test commands instead of re-deriving them each turn.
-- Summarize findings instead of repeating raw command output back to the user.
+Search first, read second, edit last.
 
-### Build Output Context Waste (CRITICAL)
+- Start with `git status --short`.
+- Read only files needed to understand the current build and active failure.
+- Do not dump the whole Java tree into context.
+- Do not inspect every dependency JAR preemptively.
+- Do not read the full wrapper/helper scripts once they are established unless they fail or select the wrong plan.
+- Prefer targeted diffs and small source excerpts.
+- Batch related compatibility fixes before rebuilding.
+- Use sentinel targets before the full matrix.
 
-**The #1 source of context waste is verbose build/compiler output.**
+For a fresh session, read only the task-relevant documents:
 
-Common mistakes that waste context:
-- Running `./gradlew build 2>&1 | tail -200` (grabs too much)
-- Not filtering compiler error output (same error repeated 3x)
-- Full stack traces for simple "symbol not found" errors
-- Gradle boilerplate warnings about deprecated features
+- migration / adding versions → `docs/development/multiversion-playbook.md`
+- compatibility representation → `docs/development/compatibility-policy.md`
+- validation decisions → `docs/development/validation-and-release.md`
+- publishing → `docs/development/publishing.md`
 
-**Solutions:**
-1. Use `build-smart.py` (see Compile/Test Workflow section)
-2. If raw gradle is needed, filter aggressively: `| grep -E "(error:|BUILD)" | head -20`
-3. Fix multiple related errors before rebuilding (don't fix-rebuild-fix-rebuild)
-4. Read error messages carefully - often one fix resolves many errors
+Fresh-machine setup documentation is not part of normal migration work on an already-configured machine.
 
-## Fast Search Workflow
+## Minecraft/API Investigation
 
-### Find files
+For Minecraft API changes, mappings, class/method availability, mixin targets, or cross-version questions, use this escalation order:
+
+1. `minecraft-dev` MCP.
+2. LootExplorer source and relevant repository history.
+3. dependency metadata/source.
+4. Gradle cache/JAR inspection.
+5. `javap` only when narrower methods are insufficient.
+
+Do not begin compatibility work with broad bytecode archaeology.
+
+## Compatibility Hierarchy
+
+Represent differences using the smallest mechanism that keeps behavior visible:
+
+1. unchanged shared source;
+2. local Stonecutter `//?` condition;
+3. narrow deterministic replacement for a mechanical rename;
+4. parsed resource/data transform;
+5. separate compatibility implementation when behavior or lifecycle materially differs;
+6. small compatibility subsystem only when a whole class family genuinely diverges.
+
+Avoid:
+
+- full source trees per Minecraft version;
+- giant legacy overlays;
+- broad regex rewriting;
+- Gradle acting as a Java source generator;
+- copying old source wholesale merely because it compiles.
+
+## Loader Rule
+
+Minecraft-version differences and loader differences are separate axes.
+
+Keep Fabric-only code under Fabric where practical.
+
+Keep NeoForge-only code under NeoForge where practical.
+
+Check loader-specific behavior independently for:
+
+- bootstrap;
+- client events;
+- key registration;
+- config/Mod Menu integration;
+- metadata;
+- mixins;
+- runtime environment declarations.
+
+Do not hide meaningful loader differences behind a forced shared abstraction.
+
+## Client-Only Rule
+
+LootExplorer is expected to be client-focused.
+
+Do not automatically copy server-oriented validation or publication metadata from other mods.
+
+Derive the actual environment from LootExplorer's current source and metadata.
+
+If the mod is client-only:
+
+- metadata should say so;
+- publication payloads should say so;
+- dedicated-server startup is not a gameplay acceptance gate;
+- server-only launch infrastructure should not be added merely for symmetry.
+
+If actual source evidence shows server/common behavior is required, document that explicitly.
+
+## Mixins
+
+If LootExplorer uses mixins, treat them as runtime-sensitive.
+
+For every affected version/loader shape, verify:
+
+- target class;
+- target method/descriptor;
+- injection point;
+- actual dispatch path;
+- whether the mixin should exist on that target.
+
+Compilation does not prove a mixin works.
+
+## UI and Rendering
+
+Compilation is not sufficient evidence for GUI behavior.
+
+For changed screen/rendering/input code, validate the representative client manually or via the smallest practical runtime check.
+
+Important behaviors may include:
+
+- opening the inspector UI;
+- rendering the inspected screen correctly;
+- text/widgets alignment;
+- mouse interaction;
+- keyboard input;
+- closing/back navigation;
+- keybind opening;
+- scrolling, if present;
+- resource reload while a client session is active.
+
+Do not build a GUI automation framework just to avoid a short manual regression pass.
+
+## Loot Querying
+
+Treat loot-table/resource lookup as a separate compatibility surface from GUI rendering.
+
+When APIs differ:
+
+- confirm target registry/resource APIs with Minecraft MCP first;
+- keep the query logic behaviorally equivalent;
+- do not redesign the feature during a port;
+- verify an actual representative lookup in-game after the target launches.
+
+## Build Wrapper
+
+Use the proven `build-smart.py` architecture from the reference repositories.
+
+Treat it as established infrastructure once copied/adapted.
+
+Adapt only project-specific facts such as:
+
+- mod/artifact naming;
+- matrix discovery;
+- class-origin proof;
+- release staging;
+- client-only behavior;
+- helper references.
+
+Do not redesign the wrapper.
+
+Expected conversion-stage commands include:
 
 ```bash
-rg --files
+python build-smart.py compile --print-plan
+
+python build-smart.py compile
+python build-smart.py compile:fabric
+python build-smart.py compile:neoforge
+python build-smart.py compile:modern
+python build-smart.py compile:legacy
+
+python build-smart.py matrix:compile
+python build-smart.py matrix:package
+
+python build-smart.py smoke-release-client:<target>
+python build-smart.py release-smoke
 ```
 
-### Find text or symbols
+Do not add publishing commands during the conversion stage.
+
+## Validation Strategy
+
+Use the smallest validation set that can disprove the current change.
+
+Examples:
+
+- shared Java change → affected generation on both loaders;
+- Fabric-only change → affected Fabric sentinel;
+- NeoForge-only change → affected NeoForge sentinel;
+- local Stonecutter condition → test both sides;
+- GUI API condition → representative runtime on both API shapes;
+- loot-query API condition → representative runtime on both query shapes;
+- resource transform → processed/package verification;
+- mixin change → runtime on each distinct injection shape;
+- build-matrix change → sentinel first, full matrix only when stable.
+
+Do not rerun the full matrix after every small edit.
+
+## Sentinel Rule
+
+Initial representative shapes should cover:
+
+```text
+26.2 Fabric
+26.2 NeoForge
+1.21.1 Fabric
+1.21.1 NeoForge
+```
+
+If LootExplorer introduces an additional unique compatibility boundary on another target, add that target.
+
+Examples:
+
+- a 26.1-only screen API boundary;
+- a 26.1.1-only loader issue;
+- a unique resource/mixin boundary.
+
+Do not treat the four default sentinels as magic if the source proves another target differs.
+
+## Full Matrix Gate
+
+Only after sentinel compatibility is stable:
 
 ```bash
-rg -n "pattern" common/src/main/java fabric/src/main/java neoforge/src/main/java
+python build-smart.py matrix:compile
+python build-smart.py matrix:package
+python scripts/verify-matrix-artifacts.py
 ```
 
-### Find assets or data
+Run the full matrix once for acceptance.
 
-```bash
-rg --files common/src/main/resources/assets common/src/main/resources/data
+Do not repeat it unless later edits invalidate the evidence.
+
+## Packaged Release Smoke
+
+Development `runClient` is not the final release proof.
+
+Use the proven packaged-release smoke architecture:
+
+- exact packaged JAR;
+- isolated runtime;
+- staged artifact hash/origin proof;
+- deterministic startup marker;
+- bounded timeout;
+- owned-process termination;
+- no existing launcher profile dependency.
+
+Representative release smoke should cover:
+
+```text
+26.2 Fabric
+26.2 NeoForge
+1.21.1 Fabric
+1.21.1 NeoForge
 ```
 
-## Typical Minecraft Mod Layout
+Add another target only if LootExplorer has a unique compatibility boundary there.
 
-These are the first places to check in most multiplatform mod repos.
+Once the required representative smokes pass, stop launching production clients.
 
-### Common code
+## Manual Regression
 
-- `common/src/main/java/...`
-- shared registries
-- shared blocks, items, menus, block entities, worldgen, recipes, screens
+Derive the manual checklist from the actual mod.
 
-### Fabric code
+Likely checks include:
 
-- `fabric/src/main/java/...`
-- Fabric-only bootstrap
-- Fabric-only client hooks
-- Fabric-only events and data hooks
+- keybind opens LootExplorer;
+- inspected screen opens correctly;
+- UI renders without clipping/misalignment;
+- mouse interaction works;
+- keyboard/back navigation works;
+- loot-table/resource lookup returns expected data;
+- changing/closing screens does not crash;
+- relevant config/Mod Menu entry works;
+- F3+T/resource reload does not break the UI.
 
-### NeoForge code
+Do not invent features that do not exist.
 
-- `neoforge/src/main/java/...`
-- NeoForge-only bootstrap
-- NeoForge-only client hooks
-- NeoForge event bus registration
+## Stopping Rule
 
-### Resources
+Once requested acceptance evidence is green, stop.
 
-- `common/src/main/resources/assets/<modid>/textures/block/`
-- `common/src/main/resources/assets/<modid>/textures/item/`
-- `common/src/main/resources/assets/<modid>/textures/gui/`
-- `common/src/main/resources/assets/<modid>/models/block/`
-- `common/src/main/resources/assets/<modid>/models/item/`
-- `common/src/main/resources/assets/<modid>/blockstates/`
-- `common/src/main/resources/data/<modid>/recipe/`
-- `common/src/main/resources/data/<modid>/loot_table/`
-- `common/src/main/resources/data/<modid>/worldgen/`
-- `common/src/main/resources/data/<modid>/tags/`
+Do not repeat:
 
-## How To Inspect Vanilla Minecraft Classes
+- full matrix builds;
+- package gates;
+- release smokes;
+- runtime clients;
+- dependency/JAR archaeology;
+- reference-repository comparisons;
 
-When you want to copy or adapt vanilla behavior, do not guess. Inspect the mapped Minecraft sources available through the Gradle/Loom caches.
+solely for reassurance.
 
-### Fastest practical rule
+Continue only when:
 
-- Search your own code first.
-- If the behavior is clearly based on a vanilla menu, block, screen, feature, recipe book, or renderer, inspect the matching vanilla class before editing.
+- a required criterion remains unresolved;
+- a later edit invalidates previous evidence;
+- a new deterministic failure appears;
+- the user explicitly asks for more validation.
 
-### Common places to look
+## Git Safety
 
-For Architectury/Loom projects, mapped Minecraft jars usually live under `~/.gradle/caches/fabric-loom/`.
-
-Useful examples:
-
-- merged named jar for browsing classes:
-  - `~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/...`
-- loader/library source jars:
-  - `~/.gradle/caches/modules-2/files-2.1/...`
-
-### Quick class search
-
-Use `jar tf` plus `rg` to find likely vanilla classes:
-
-```bash
-jar tf ~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/*/*.jar | rg 'MenuScreens|RecipeBook|FurnaceScreen|CreativeModeTabs'
-```
-
-### Read a mapped source file from a sources jar
-
-If a sources jar exists, prefer that over decompiling bytecode:
-
-```bash
-python3 - <<'PY'
-import zipfile, glob
-path = glob.glob('/home/$USER/.gradle/caches/modules-2/files-2.1/**/**/**/*sources.jar', recursive=True)[0]
-with zipfile.ZipFile(path) as z:
-    for name in z.namelist():
-        if name.endswith('SomeVanillaClass.java'):
-            print(z.read(name).decode('utf-8'))
-            break
-PY
-```
-
-In practice, narrow the glob to the exact dependency first.
-
-### Bytecode inspection when no source exists
-
-For MC 26.1.2 with `loom-no-remap`, source jars may be absent or incomplete. When you need to understand an undocumented API (especially new rendering internals), read the bytecode directly:
-
-```python
-python3 - <<'PY'
-import subprocess, zipfile
-
-jar = "/mnt/c/Users/video/.gradle/caches/fabric-loom/26.1.2/minecraft-merged.jar"
-
-# List members of a class
-result = subprocess.run(
-    ["javap", "-p", "-classpath", jar, "net.minecraft.client.renderer.SubmitNodeCollector"],
-    capture_output=True, text=True
-)
-print(result.stdout)
-
-# Show bytecode for one class (shows all method bodies + constant pool references)
-result2 = subprocess.run(
-    ["javap", "-c", "-p", "-classpath", jar,
-     "net.minecraft.client.renderer.block.BlockModelRenderState"],
-    capture_output=True, text=True
-)
-print(result2.stdout[:3000])
-PY
-```
-
-The constant pool `//` comments in `-c` output reveal what methods and fields each method actually calls — invaluable for tracing call chains through new rendering APIs with no docs. Use `-verbose` for the full constant pool up front if you need to trace across multiple classes.
-
-This technique is what revealed that `BlockModelRenderState.submitWithZOffset()` calls `SubmitNodeCollector.submitBlockModel()` (correct path), while the actual issue was that the item/entity render pass doesn't apply world lighting — requiring `submitMovingBlock` instead.
-
-### Good lookup targets by task
-
-- menu/screen issue:
-  - `MenuScreens`
-  - matching vanilla screen class like `FurnaceScreen`, `AbstractFurnaceScreen`, `CraftingScreen`
-- recipe book issue:
-  - `RecipeBookComponent`
-  - `RecipeBookMenu`
-  - matching vanilla screen/menu implementation
-- worldgen issue:
-  - matching feature class and configured/placed feature patterns
-- block behavior issue:
-  - matching vanilla block class, especially survival/update/placement methods
-- client rendering/model predicate issue:
-  - matching vanilla item/block render registration path
-
-### Efficiency rule
-
-- Do not open random large Minecraft sources jars blindly.
-- Search for the exact class name first.
-- Open only the one or two vanilla classes closest to the feature being implemented.
-
-## Loader Split Rule
-
-If something works on one loader but not the other:
-
-1. Check the shared implementation.
-2. Check loader-specific bootstrap and client registration.
-3. Do not assume Architectury abstraction is enough for every case.
-4. If a shared helper is unstable on one loader, move that behavior into loader-native code.
-
-Good examples:
-
-- screen registration
-- creative tab insertion
-- render layer registration
-- client predicates
-- event wiring
-
-## Common Debug Paths
-
-### Screen/menu issue
-
-Check:
-
-- menu type registration
-- menu open call
-- client screen registration
-- loader-specific screen event hooks
-
-### Texture/model issue
-
-Check:
-
-- block/item model JSON
-- blockstate JSON
-- referenced texture path
-- render layer if cutout/translucent behavior matters
-
-Use `F3 + T` for texture/model reloads.
-
-### Worldgen issue
-
-Check:
-
-- configured feature JSON
-- placed feature JSON
-- biome JSON generation-step wiring
-- custom feature registration and custom feature code
-
-### Recipe/book/UI issue
-
-Check:
-
-- menu class
-- screen class
-- recipe type registration
-- recipe serializer/type wiring
-- client-side category/filter hooks
-
-## Dirty Worktree Rule
-
-- Assume the tree is dirty unless proven otherwise.
-- Never revert unrelated user changes.
-- Treat modified PNGs, docs, and generated references as user-owned unless explicitly told otherwise.
-- Stage only the files for the current fix.
-
-Before committing, always inspect:
+Before editing:
 
 ```bash
 git status --short
 ```
 
-## Docs And Wiki Workflow
+Never revert unrelated user changes.
 
-- Treat repo docs as the source of truth.
-- Write and update documentation in-repo first, not directly in the GitHub wiki UI.
-- Use `docs/wiki/` for structured gameplay/system pages.
-- Use a repo page like `docs/wiki/modrinth-front-page.md` for storefront/front-page copy drafts.
-- The GitHub wiki does not auto-sync by default, so think of it as a publish target.
+Do not stage:
 
-Preferred workflow:
+- `.env`;
+- build output;
+- run directories;
+- caches;
+- downloaded tools;
+- validation logs;
+- unrelated docs/scripts.
 
-1. Update or add the page in `docs/wiki/`.
-2. Keep recipe, mechanic, and progression details aligned with the actual code/data.
-3. If the user wants GitHub wiki updated, sync from the repo docs rather than rewriting from scratch in the browser.
+Do not commit, push, tag, publish, merge branches, or delete branches unless the user explicitly authorizes it.
 
-If automation is later added, it should push repo docs into the GitHub wiki repo. Until then, avoid treating the GitHub wiki as the primary source.
+## Closeout
 
-## Compile/Test Workflow
+Report only:
 
-### CRITICAL: Use the Smart Build Script
+- canonical baseline decision;
+- compatibility boundaries added;
+- files/architecture changed;
+- matrix results;
+- artifact verification;
+- representative runtime/release-smoke results;
+- manual checks still required;
+- anything intentionally deferred.
 
-**ALWAYS use `build-smart.py` instead of raw Gradle commands.**
-
-Raw Gradle output is extremely verbose (100-200+ lines per failed build) and wastes massive amounts of context. The smart build script parses errors and shows only essential information.
-
-```bash
-# On Windows (cmd.exe) - PREFERRED for this repo
-cmd.exe /c "python build-smart.py"
-
-# Available commands:
-python build-smart.py              # compile only (default, fast)
-python build-smart.py compile      # same as above
-python build-smart.py compile:fabric    # compile common + fabric only
-python build-smart.py compile:neoforge  # compile common + neoforge only
-python build-smart.py build        # full build with jars
-python build-smart.py shadowJar    # distribution jars
-python build-smart.py release      # alias for shadowJar
-python build-smart.py clean        # clean build dirs
-```
-
-**Default is `compile`** - fast compileJava only, no jar packaging. Use this during development.
-
-**Example output comparison:**
-
-Raw Gradle (BAD - 150+ lines):
-```
-A:\Projects\...\BoneShaftEffect.java:26: error: cannot find symbol
-        return entity instanceof Zombie || entity instanceof Skeleton ||
-                                 ^
-  symbol:   class Zombie
-  location: class BoneShaftEffect
-... (100 more lines of repeated errors and gradle boilerplate)
-```
-
-Smart Build (GOOD - ~10 lines):
-```
-Running: gradlew.bat :common:compileJava :fabric:compileJava :neoforge:compileJava --no-daemon
-------------------------------------------------------------
-============================================================
-BUILD FAILED
-============================================================
-
-Errors found:
-------------------------------------------------------------
-BoneShaftEffect.java:26: error: cannot find symbol
-    symbol:   class Zombie
-------------------------------------------------------------
-Fix errors and rebuild
-```
-
-### Windows vs WSL
-
-For this repo specifically, **use cmd.exe** because the gradle.properties has Windows-style Java paths.
-
-```bash
-# Preferred for this repo
-cmd.exe /c "cd /d A:\Projects\The Experiment Lab\Minecraft\sagittary && python build-smart.py"
-```
-
-### WSL Mirror Build (for pure WSL projects)
-
-For WSL-on-Windows or mixed-filesystem setups, prefer a mirror build to avoid path, lock, and Gradle cache issues.
-
-### Reusable mirror compile loop
-
-```bash
-mirror=/tmp/mod-wsl
-rm -rf "$mirror"
-mkdir -p "$mirror"
-rsync -a --delete \
-  --exclude '.git' \
-  --exclude '.gradle' \
-  --exclude 'build' \
-  --exclude 'fabric/run' \
-  --exclude 'neoforge/run' \
-  ./ "$mirror"/
-cd "$mirror"
-env GRADLE_USER_HOME=/tmp/mod-gradle-home \
-    MOD_BUILD_ROOT=/tmp/mod-build \
-    ./gradlew --project-cache-dir /tmp/mod-project-cache \
-    --rerun-tasks \
-    :common:processResources \
-    :common:compileJava \
-    :fabric:compileJava \
-    :neoforge:compileJava
-```
-
-If a specific repo already has a known-good variant, prefer that exact command.
-
-## Editing Rules
-
-- Use the smallest patch that fixes the actual issue.
-- Prefer loader-native fixes over forcing a shared abstraction when runtime behavior diverges.
-- Avoid drive-by refactors unless they directly reduce future breakage on the active path.
-- If you discover a reusable list or workflow, centralize it once instead of duplicating it in multiple loader files.
-
-## Commit Workflow
-
-Use the commit style the user has preferred in this repo:
-
-1. Make one coherent change.
-2. Run the relevant compile/test loop.
-3. Stage only the files for that change.
-4. Commit with a short conventional-style message.
-
-Preferred commit shape:
-
-- `fix: ...`
-- `feat: ...`
-- `refactor: ...`
-- `style: ...`
-- `docs: ...`
-- `chore: ...`
-
-Good examples:
-
-- `fix: register foundry screen on neoforge`
-- `fix: split vanilla creative tabs by loader`
-- `docs: refresh wiki for current gameplay`
-
-Avoid:
-
-- giant mixed-purpose commits
-- vague messages like `updates` or `misc fixes`
-- committing user texture work unless explicitly requested
-
-## Final Response Pattern
-
-Keep closeout concise:
-
-- say what changed
-- point to the important file or two
-- say what was verified
-- call out anything not tested
-
-Do not dump long terminal logs into the response.
-
-## Repo-Local Appendix
-
-These notes are specific to this repo and can be replaced in a new project.
-
-### Sagittary-specific build workflow
-
-For this repo, use `build-smart.py` which handles Windows paths correctly:
-
-```bash
-# Development compile check (fast)
-cmd.exe /c "python build-smart.py"
-
-# Distribution build
-cmd.exe /c "python build-smart.py shadowJar"
-```
-
-Output jars for distribution:
-- `fabric/build/libs/sagittary-fabric-X.X.X.jar`
-- `neoforge/build/libs/sagittary-neoforge-X.X.X.jar`
-
-Note: The `-raw.jar` files are intermediate builds missing the common module - do not distribute those.
-
-### Current repo-specific caution
-
-- This repo frequently has user-owned texture edits in `common/src/main/resources/assets/sagittary/textures/`
-- Do not stage or revert those files unless the user explicitly asks for that
-
-### MC 26.1.x Registration Warning
-
-If startup crashes contain:
-
-```text
-Block id not set
-Item id not set
-```
-
-check registration/property helpers first before debugging anything else.
-
-Recent Minecraft versions may require IDs to be assigned on `BlockBehaviour.Properties` and `Item.Properties` during construction. Fix the shared registration helpers before patching individual registrations.
+Keep raw logs and migration diary material out of the closeout.

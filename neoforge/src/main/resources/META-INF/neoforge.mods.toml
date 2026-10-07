@@ -7,39 +7,43 @@ license = "MIT"
 modId = "lootexplorer"
 version = "${version}"
 displayName = "LootExplorer"
+displayTest = "IGNORE_ALL_VERSION"
 authors = "VgLevelUp"
 description = '''
 
 '''
-logoFile = "icon.png"
+${neoforge_icon_field} = "icon.png"
 
 [[dependencies.lootexplorer]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26,)"
+versionRange = "[${neoforge_version},)"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"
 
 [[dependencies.lootexplorer]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.1.2,)"
+versionRange = "[${minecraft_version}]"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"
 
 [[dependencies.lootexplorer]]
 modId = "architectury"
 type = "required"
-versionRange = "[20.0.7,)"
+versionRange = "[${architectury_api_version},)"
 ordering = "AFTER"
-side = "BOTH"
+side = "CLIENT"
 
 [[dependencies.lootexplorer]]
 modId = "jei"
 type = "optional"
-versionRange = "[29,)"
+versionRange = "[${jei_version},)"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"
+
+[features.lootexplorer]
+javaVersion = "[${java_version},)"
 
 [[mixins]]
 config = "lootexplorer.mixins.json"

@@ -20,8 +20,12 @@ import java.util.List;
 
 public class ModKeyMaps {
 
+    //? if >=26.1 {
     public static final KeyMapping.Category LOOT_EXPLORER_CATEGORY =
             KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Constants.MOD_ID, "misc"));
+    //? } else {
+    /*private static final String LOOT_EXPLORER_CATEGORY = "category.lootexplorer";
+    *///? }
 
     public static final KeyMapping CUSTOM_KEYMAPPING = new KeyMapping(
             "key.copy_loot_table",
@@ -60,7 +64,11 @@ public class ModKeyMaps {
                             Constants.LOGGER.info(items.toString());
                             LootPreviewMenu menu = new LootPreviewMenu(0, minecraft.player.getInventory());
                             LootPreviewScreen screen = new LootPreviewScreen(menu, minecraft.player.getInventory(), Component.literal("Loot Preview"), items);
+                            //? if >=26.2 {
+                            /*minecraft.gui.setScreen(screen);
+                            *///? } else {
                             minecraft.setScreen(screen);
+                            //? }
                         }
                     }
                 }
@@ -80,7 +88,11 @@ public class ModKeyMaps {
 
                     loreString = net.minecraft.util.StringUtil.stripColor(loreString);
                     minecraft.keyboardHandler.setClipboard(loreString);
+                    //? if >=26.1 {
                     minecraft.player.sendOverlayMessage(Component.literal("Copied loot table name to clipboard: " + loreString));
+                    //? } else {
+                    /*minecraft.player.displayClientMessage(Component.literal("Copied loot table name to clipboard: " + loreString), true);
+                    *///? }
                 }
             }
         }
@@ -96,10 +108,18 @@ public class ModKeyMaps {
                 if (containerLoot != null) {
                     LootPreviewInventory.open(minecraft.player, containerLoot.lootTable());
                 } else {
+                    //? if >=26.1 {
                     minecraft.player.sendOverlayMessage(Component.literal("No loot table found for this item."));
+                    //? } else {
+                    /*minecraft.player.displayClientMessage(Component.literal("No loot table found for this item."), true);
+                    *///? }
                 }
             } else {
+                //? if >=26.1 {
                 minecraft.player.sendOverlayMessage(Component.literal("This item doesn't have a loot table."));
+                //? } else {
+                /*minecraft.player.displayClientMessage(Component.literal("This item doesn't have a loot table."), true);
+                *///? }
             }
         }
     }

@@ -63,7 +63,11 @@ public class LootPreviewInventory {
             player.openMenu(provider);
             player.sendSystemMessage(Component.literal("Previewing loot table contents"));
         } else {
+            //? if >=26.1 {
             player.sendOverlayMessage(Component.literal("Failed to load loot table"));
+            //? } else {
+            /*player.displayClientMessage(Component.literal("Failed to load loot table"), true);
+            *///? }
         }
     }
 

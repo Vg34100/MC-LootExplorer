@@ -1,0 +1,180 @@
+import groovy.json.JsonSlurper
+import java.util.zip.ZipFile
+
+// Optional development runtimes. Pins live in the target's matrix properties;
+// machine-local switches/paths belong in ignored gradle.local.properties or -P.
+def local = new Properties()
+def localFile = rootProject.file('gradle.local.properties')
+if (localFile.isFile()) localFile.withInputStream { local.load(it) }
+def option = { String name, String fallback ->
+    providers.gradleProperty(name).orNull ?: local.getProperty(name) ?: fallback
+}
+
+ext.configureDevIntegrations = { Properties matrix, boolean legacy ->
+    def runtime = legacy ? 'modLocalRuntime' : 'localRuntime'
+    def enabled = option('dev_integrations', 'true').toBoolean()
+    def selected = []
+    def notes = []
+    repositories.maven {
+        name = 'ModrinthDevelopment'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    def addMod = { String key, String slug ->
+        def pin = matrix.getProperty("${key}_dev_version")
+        if (pin) {
+            dependencies.add(runtime, "maven.modrinth:${slug}:${pin}")
+            selected.add("${slug}:${pin}")
+        } else notes.add("${slug}: no compatible published pin for ${project.name}")
+    }
+    if (enabled) {
+        if (option('betterarcheology_dev', 'true').toBoolean()) {
+            addMod('betterarcheology', 'better-archeology')
+            // Modrinth Maven supplies no transitive dependency graph.
+            addMod('resourcefulconfig', 'resourceful-config')
+        }
+        if (option('dungeons_and_taverns_dev', 'true').toBoolean()) {
+            // Author's mod wrapper exposes the datapack in every dev world.
+            addMod('dungeons_and_taverns', 'dungeons-and-taverns')
+        }
+        if (option('ironchests_dev', 'true').toBoolean()) {
+            addMod('ironchests', 'ironchest')
+            def libgui = matrix.getProperty('ironchests_dev_libgui_version')
+            if (matrix.getProperty('ironchests_dev_version') && libgui) {
+                // Legacy Iron Chests bundles LibGui. Loom dev runs need it as
+                // an explicit dependency; its author POM supplies Jankson and
+                // LibNinePatch, which are also nested in the installed mod.
+                repositories.maven {
+                    name = 'CottonDevelopment'
+                    url = 'https://staging.alexiil.uk/maven/'
+                    content {
+                        includeGroup 'io.github.cottonmc'
+                        includeGroup 'io.github.juuxel'
+                    }
+                }
+                dependencies.add(runtime, "io.github.cottonmc:LibGui:${libgui}") {
+                    // The target already pins its loader and Fabric API.
+                    exclude group: 'net.fabricmc'
+                    exclude group: 'net.fabricmc.fabric-api'
+                }
+                selected.add("LibGui:${libgui} (Iron Chests development libraries)")
+            }
+        }
+        if (option('extrachests_dev', 'true').toBoolean()) {
+            def modDir = rootProject.file(option('dev_mods_dir', 'dev-integrations/mods'))
+            def artifacts = new File(modDir, project.name)
+            def candidates = (artifacts.listFiles() ?: []).findAll { file ->
+                file.name.startsWith('extrachests-') && file.name.endsWith('.jar')
+                        && !(file.name ==~ /.*-(sources|javadoc|dev|dev-shadow|raw)\.jar/)
+            }
+            // Exact target metadata, not a permissive old version range. Local
+            // installable jars are copied here explicitly; no sibling is needed.
+            def matches = candidates.findAll { file ->
+                try {
+                    new ZipFile(file).withCloseable { jar ->
+                        if (matrix.loader == 'fabric') {
+                            def entry = jar.getEntry('fabric.mod.json')
+                            if (!entry) return false
+                            def meta = new JsonSlurper().parse(jar.getInputStream(entry))
+                            return meta.id == 'extrachests' && meta.depends?.minecraft == matrix.minecraft_version
+                        }
+                        def entry = jar.getEntry('META-INF/neoforge.mods.toml')
+                        if (!entry) return false
+                        def text = jar.getInputStream(entry).getText('UTF-8')
+                        return text.contains('modId = "extrachests"')
+                                && text.contains("versionRange = \"[${matrix.minecraft_version}]\"")
+                    }
+                } catch (IOException ignored) {
+                    return false
+                }
+            }
+            if (matches.size() == 1) {
+                dependencies.add(runtime, files(matches.first()))
+                selected.add("ExtraChests local: ${matches.first()}")
+            } else {
+                if (candidates) notes.add("ExtraChests: skipped ambiguous/mismatched local jars in ${artifacts}")
+                addMod('extrachests', 'extra-chests')
+            }
+        }
+    }
+
+    def packs = configurations.create('devDatapacks') {
+        canBeConsumed = false
+        transitive = false
+    }
+    def fluffyPin = enabled && option('fluffys_enchants_dev', 'true').toBoolean()
+            ? matrix.getProperty('fluffys_enchants_dev_version') : null
+    if (fluffyPin) dependencies.add(packs.name, "maven.modrinth:fluffys-enchants:${fluffyPin}@zip")
+    def packCache = rootProject.file("dev-integrations/datapacks/fluffys-enchants/${fluffyPin ?: 'unavailable'}")
+    def prepare = tasks.register('prepareDevDatapacks', Copy) {
+        group = 'development'
+        description = 'Cache compatible optional datapacks once, shared by target worlds.'
+        onlyIf { fluffyPin != null }
+        from packs
+        into packCache
+    }
+    tasks.register('stageDevDatapacks') {
+        group = 'development'
+        description = 'Install compatible dev datapacks into an existing target world (-Pdev_world=name).'
+        dependsOn prepare
+        doLast {
+            if (!fluffyPin) throw new GradleException("No compatible Fluffy's Enchants dev datapack for ${project.name}, or development integrations are disabled.")
+            def name = option('dev_world', '')
+            def saves = rootProject.file("runs/${project.name}/client/saves").canonicalFile
+            def world = new File(saves, name).canonicalFile
+            if (!name || world.parentFile != saves || !new File(world, 'level.dat').isFile()) {
+                throw new GradleException('Set -Pdev_world to the name of an existing world in this target client; no worlds are copied or upgraded.')
+            }
+            copy { from packs; into new File(world, 'datapacks') }
+            logger.lifecycle("${project.path}: staged Fluffy's Enchants in ${world}/datapacks; enable it in that world's datapack list.")
+        }
+    }
+    def report = {
+        logger.lifecycle("${project.path}: development integrations ${enabled ? selected : 'disabled'}")
+        notes.each { logger.lifecycle("${project.path}: ${it}") }
+        if (fluffyPin) logger.lifecycle("${project.path}: Fluffy's Enchants cache: ${packCache}; stageDevDatapacks -Pdev_world=<existing-world> installs it.")
+    }
+    tasks.register('verifyDevIntegrations') {
+        group = 'verification'
+        description = 'Resolve optional development mods/datapacks without launching or packaging.'
+        dependsOn prepare
+        doLast {
+            report()
+            configurations.getByName(runtime).files.sort { it.name }.each { file ->
+                new ZipFile(file).withCloseable { jar ->
+                    def metadata = matrix.loader == 'fabric' ? 'fabric.mod.json' : 'META-INF/neoforge.mods.toml'
+                    if (!jar.getEntry(metadata)) {
+                        // The author-published Jankson library is a plain Java
+                        // dependency, not a loader mod. Its wrapper is separate.
+                        if (!jar.getEntry('blue/endless/jankson/Jankson.class')) {
+                            throw new GradleException("Missing ${metadata} in ${file}")
+                        }
+                        logger.lifecycle("${project.path}: ${file.name}, plain Jankson development library")
+                        return
+                    }
+                    def loot = jar.entries().findAll { it.name.endsWith('.json') && it.name.contains('/loot_table/') }
+                    logger.lifecycle("${project.path}: ${file.name}, ${loot.size()} loot tables")
+                }
+            }
+            packs.files.each { file ->
+                new ZipFile(file).withCloseable { pack ->
+                    new JsonSlurper().parse(pack.getInputStream(pack.getEntry('pack.mcmeta')))
+                    logger.lifecycle("${project.path}: datapack ${file.name}")
+                }
+            }
+            // These mods must never enter compile inputs or production staging.
+            ['compileClasspath', 'releaseSmokeMods'].each { name ->
+                def fixtures = configurations.getByName(runtime).allDependencies
+                if (configurations.getByName(name).allDependencies.any { it.group == 'maven.modrinth' || fixtures.contains(it) }) {
+                    throw new GradleException("Development integration leaked into ${name}")
+                }
+            }
+        }
+    }
+    tasks.withType(JavaExec).configureEach { run ->
+        if (run.name == 'runClient') {
+            dependsOn prepare
+            doFirst { report() }
+        }
+    }
+}
