@@ -4,6 +4,8 @@ import java.util.zip.ZipFile
 plugins {
     id 'dev.architectury.loom-no-remap' version '1.17.493' apply false
     id 'dev.architectury.loom' version '1.17.493' apply false
+    id 'com.modrinth.minotaur' version '2.10.0' apply false
+    id 'net.darkhax.curseforgegradle' version '1.3.33' apply false
 }
 
 def matrixFile = rootProject.file("gradle/matrix/${project.name}.properties")
@@ -155,6 +157,14 @@ dependencies {
 apply from: rootProject.file('gradle/dev-integrations.gradle')
 configureDevIntegrations(matrix, legacy)
 
+// Publication plugins are activated only for an explicit verified manifest.
+if (providers.gradleProperty('publish_manifest').isPresent()) {
+    apply plugin: 'com.modrinth.minotaur'
+    apply plugin: 'net.darkhax.curseforgegradle'
+    tasks.register('curseforge', net.darkhax.curseforgegradle.TaskPublishCurseForge)
+    apply from: rootProject.file('gradle/publishing.gradle')
+}
+
 java {
     withSourcesJar()
     toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
@@ -210,6 +220,10 @@ if (isFabric || loader == 'neoforge') {
     def stage = tasks.register('stageReleaseClient') {
         dependsOn 'packageTarget'
         doLast {
+            def fixtures = configurations.getByName(legacy ? 'modLocalRuntime' : 'localRuntime').allDependencies
+            if (smokeDependencies.allDependencies.any { it.group == 'maven.modrinth' || fixtures.contains(it) }) {
+                throw new GradleException('Development fixture leaked into production staging')
+            }
             def modsDir = new File(smokeRun.get().asFile, 'mods')
             if (modsDir.exists()) throw new GradleException("Refusing reused production mods directory: ${modsDir}")
             modsDir.mkdirs()

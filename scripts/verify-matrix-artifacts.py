@@ -61,6 +61,8 @@ def inspect(matrix):
             assert PACKAGE + name + '.class' in files, f'Missing mod class: {name}'
         classes = [name for name in files if name.endswith('.class')]
         assert classes and all(name.startswith(PACKAGE) for name in classes), 'Bundled dependency classes'
+        assert all(name.split('/')[1] == MOD_ID for name in files
+                   if name.startswith(('assets/', 'data/')) and len(name.split('/')) > 2), 'Bundled external resources/datapack'
         for name in classes:
             bytecode = jar.read(name)
             assert bytecode[:4] == b'\xca\xfe\xba\xbe', f'Invalid class: {name}'
