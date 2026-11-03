@@ -1,0 +1,25 @@
+{
+  "directory_names": [
+    ".claude",
+    ".codex",
+    ".agents",
+    "prompts",
+    ".development",
+    ".cursor"
+  ],
+  "file_names": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".cursorrules",
+    ".aider.conf.yml",
+    ".aider.input.history",
+    ".aider.chat.history.md"
+  ],
+  "paths": [
+    "docs/development/history/lootexplorer-migration-notes.md",
+    "docs/development/lootexplorer-1.20.1-and-26.3-port.md",
+    "docs/development/session-summary.md",
+    ".github/copilot-instructions.md"
+  ]
+}
