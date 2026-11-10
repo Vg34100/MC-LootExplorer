@@ -1,8 +1,5 @@
 package net.vg.lootexplorer.util;
 
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -33,8 +30,8 @@ public class LootGenerator {
 
         try {
             // Parse the loot table location
-            Identifier resourceLocation = Identifier.parse(lootTableLocation);
-            ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, resourceLocation);
+            Identifier resourceLocation = ModIds.parse(lootTableLocation);
+
 
             // Get the ServerLevel
             ServerLevel serverLevel = (ServerLevel) player.level();
@@ -42,11 +39,11 @@ public class LootGenerator {
             // Get the LootTable
 //            Holder<LootTable> lootTableHolder = player.getServer().reloadableRegistries().getLootTable(lootTableKey);
 //            LootTable lootTable = lootTableHolder.value();
-            LootTable lootTable = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
+            LootTable lootTable = LootTables.get(player.level().getServer(), resourceLocation);
             // Generate several samples of the loot table
             for (int i = 0; i < samples; i++) {
                 // Create a loot context with appropriate parameters
-                LootParams lootParams = createLootParams(player, serverLevel);
+                LootParams lootParams = createLootParams(player, serverLevel, lootTable);
 
                 // Get random items from the loot table using a different seed each time
                 List<ItemStack> lootItems = lootTable.getRandomItems(lootParams, i + 1).stream()
@@ -67,13 +64,19 @@ public class LootGenerator {
     /**
      * Create appropriate LootParams for the loot table based on the context
      */
-    private static LootParams createLootParams(Player player, ServerLevel serverLevel) {
+    public static LootParams createLootParams(Player player, ServerLevel serverLevel, LootTable table) {
         // This is similar to how the /loot command creates parameters
         LootParams.Builder builder = new LootParams.Builder(serverLevel)
                 .withParameter(LootContextParams.ORIGIN, player.position())
                 .withLuck(player.getLuck());
 
-        // Create loot parameters with the chest loot context set
+        if (table.getParamSet() == LootContextParamSets.ARCHAEOLOGY) {
+            builder.withParameter(LootContextParams.THIS_ENTITY, player);
+            //? if >=26.1 {
+            /*builder.withParameter(LootContextParams.TOOL, player.getMainHandItem());
+            *///? }
+            return builder.create(LootContextParamSets.ARCHAEOLOGY);
+        }
         return builder.create(LootContextParamSets.CHEST);
     }
 
@@ -81,12 +84,12 @@ public class LootGenerator {
      * Different method to handle loot tables that might require different parameters
      */
     public static List<ItemStack> generateSpecificLoot(Player player, String lootTableLocation, int samples, String type) {
-        Identifier resourceLocation = Identifier.parse(lootTableLocation);
-        ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, resourceLocation);
+        Identifier resourceLocation = ModIds.parse(lootTableLocation);
+
         ServerLevel serverLevel = (ServerLevel) player.level();
-//        Holder<LootTable> lootTableHolder = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
+//        Holder<LootTable> lootTableHolder = LootTables.get(player.level().getServer(), resourceLocation);
 //        LootTable lootTable = lootTableHolder.value();
-        LootTable lootTable = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
+        LootTable lootTable = LootTables.get(player.level().getServer(), resourceLocation);
 
         List<ItemStack> allItems = new ArrayList<>();
 

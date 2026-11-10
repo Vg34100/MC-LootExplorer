@@ -10,7 +10,9 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
 import net.minecraft.world.level.storage.loot.entries.TagEntry;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+//? if >=1.21 {
 import net.minecraft.world.level.storage.loot.functions.SetComponentsFunction;
+//? }
 import net.vg.lootexplorer.mixin.*;
 
 import java.util.List;
@@ -48,9 +50,11 @@ public class TestLootHandler {
 
         functions.forEach(
                 function -> {
+                    //? if >=1.21 {
                     if (function instanceof SetComponentsFunction) {
                         itemStack.applyComponents(((SetComponentsFunctionMixin)function).getComponents());
                     }
+                    //? }
 //                    else if (function instanceof EnchantRandomlyFunction) {
 //                        ((EnchantRandomlyFunctionMixin)function).getOptions().ifPresentOrElse();
 //                    } else if (function instanceof EnchantWithLevelsFunction) {

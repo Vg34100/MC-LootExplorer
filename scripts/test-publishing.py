@@ -44,15 +44,15 @@ class PublishingSafety(unittest.TestCase):
             data = PUBLISH["publication_plan"]()
         self.assertEqual({r["target"] for r in data["entries"]}, {p.stem for p in (ROOT / 'gradle/matrix').glob('*.properties')})
         self.assertEqual(len({r['version_number'] for r in data['entries']}), len(data['entries']))
-        self.assertEqual(len(data['entries']), 12)
+        self.assertEqual(len(data['entries']), 16)
         self.assertEqual(data['project_id'], 'pVa5DTcR')
         self.assertEqual(data['curseforge_project_id'], '1072637')
-        self.assertEqual(data['modrinth_environments'], dict(client_side='required', server_side='unsupported'))
+        self.assertEqual(data['modrinth_environments'], dict(client_side='required', server_side='optional'))
         for row in data['entries']:
-            loader = {'fabric': 'Fabric', 'neoforge': 'NeoForge'}[row['loader']]
+            loader = {'fabric': 'Fabric', 'forge': 'Forge', 'neoforge': 'NeoForge'}[row['loader']]
             self.assertEqual(row['version_name'], f"[{loader}] Loot Explorer {data['mod_version']} ({row['minecraft']})")
             self.assertEqual(row['version_number'], f"{data['mod_version']}-{row['minecraft']}-{row['loader']}")
-            self.assertEqual(row['artifact'], f"build/libs/{row['target']}/LootExplorer-{row['loader']}-{row['minecraft']}-{data['mod_version']}.jar")
+            self.assertEqual(row['artifact'], f"build/libs/{row['target']}/lootexplorer-{row['loader']}-{row['minecraft']}-{data['mod_version']}.jar")
             mods = {d['mod_id'] for d in row['dependencies']}
             self.assertEqual(mods, {'architectury', 'fabric-api', 'modmenu', 'jei'} if row['loader'] == 'fabric' else {'architectury', 'jei'})
             kinds = {d['mod_id']: d['dependency_type'] for d in row['dependencies']}
@@ -67,8 +67,8 @@ class PublishingSafety(unittest.TestCase):
             if row['loader'] == 'fabric':
                 self.assertEqual(kinds['fabric-api'], 'required')
                 self.assertEqual(kinds['modmenu'], 'optional')
-            self.assertEqual(row['curseforge_versions'], [row['minecraft'], loader, f"Java {row['java']}", 'Client'])
-            self.assertEqual(row['environments'], ['Client'])
+            self.assertEqual(row['curseforge_versions'], [row['minecraft'], loader, f"Java {row['java']}", 'Client', 'Server'])
+            self.assertEqual(row['environments'], ['Client', 'Server'])
 
     def test_curseforge_exact_metadata_and_duplicate_guard(self):
         data = PUBLISH['publication_plan']()
@@ -81,6 +81,18 @@ class PublishingSafety(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Existing CurseForge'):
             PUBLISH['check_curseforge_duplicates'](data, existing)
         PUBLISH['check_curseforge_duplicates'](data, dict(id=1072637, files=[]))
+
+    def test_curseforge_semantic_duplicates_cover_every_loader(self):
+        data = PUBLISH['publication_plan']()
+        for row in data['entries']:
+            with self.subTest(target=row['target']):
+                target = dict(data, entries=[row])
+                file = dict(id=1, name='historical-' + data['mod_version'] + '-build.jar',
+                            versions=[row['minecraft'], row['curseforge_versions'][1]])
+                with self.assertRaisesRegex(ValueError, 'Existing CurseForge'):
+                    PUBLISH['check_curseforge_duplicates'](target, dict(id=1072637, files=[file]))
+                PUBLISH['check_curseforge_duplicates'](target, dict(id=1072637, files=[
+                    dict(file, versions=[row['minecraft'], 'Quilt'])]))
 
     def test_resume_requires_exact_artifact_receipt(self):
         import json
@@ -115,7 +127,7 @@ class PublishingSafety(unittest.TestCase):
                         name='Loot Explorer ' + data['mod_version'], game_versions=['26.2'], loaders=['fabric'])
         with self.assertRaisesRegex(ValueError, 'Existing Modrinth'):
             PUBLISH['check_duplicates'](data, [existing])
-        for change in ({'name': 'Loot Explorer ' + data['mod_version'] + '0'}, {'loaders': ['quilt']}, {'game_versions': ['1.20.1']}):
+        for change in ({'name': 'Loot Explorer ' + data['mod_version'] + '0'}, {'loaders': ['quilt']}, {'game_versions': ['1.19.4']}):
             PUBLISH['check_duplicates'](data, [dict(existing, **change)])
         file = dict(id=1, name='lootexplorer-' + data['mod_version'] + '-v26.2-fabric.jar', versions=['26.2', 'Fabric'])
         with self.assertRaisesRegex(ValueError, 'Existing CurseForge'):
@@ -139,7 +151,7 @@ class PublishingSafety(unittest.TestCase):
         with patch('urllib.request.urlopen') as urlopen, patch('builtins.print'):
             urlopen.return_value.__enter__.return_value.read.return_value = json.dumps(project).encode()
             PUBLISH['check_modrinth_project'](data, dry_run=True)
-            with self.assertRaisesRegex(ValueError, 'Client-only'):
+            with self.assertRaisesRegex(ValueError, 'project environments differ'):
                 PUBLISH['check_modrinth_project'](data)
 
     def test_unmapped_metadata_and_wrong_mod_namespace_fail(self):
@@ -276,7 +288,7 @@ class PublishingSafety(unittest.TestCase):
             with patch.dict(PUBLISH['collect'].__globals__, replacements), patch.dict(os.environ, {}, clear=True), patch('builtins.print'):
                 PUBLISH['collect']()
                 bundle = root / 'build/publishing/github-assets'
-                self.assertEqual(len(list(bundle.glob('*.jar'))), 12)
+                self.assertEqual(len(list(bundle.glob('*.jar'))), len(data['entries']))
                 PUBLISH['restore'](bundle)
                 extra = bundle / 'unexpected-dev.jar'
                 extra.touch()

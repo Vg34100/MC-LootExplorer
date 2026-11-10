@@ -25,7 +25,7 @@ stonecutter {
             def target = new Properties()
             targetFile.withInputStream { target.load(it) }
             def name = targetFile.name - '.properties'
-            if (name != "${target.minecraft_version}-${target.loader}" || !(target.loader in ['fabric', 'neoforge'])) {
+            if (name != "${target.minecraft_version}-${target.loader}" || !(target.loader in ['fabric', 'forge', 'neoforge'])) {
                 throw new GradleException("Invalid matrix target: ${targetFile}")
             }
             version(name, target.minecraft_version)
@@ -35,7 +35,7 @@ stonecutter {
 
 // Loom reads its platform before the per-target build script is evaluated.
 gradle.beforeProject { project ->
-    if (project.name.endsWith('-neoforge')) {
-        project.extensions.extraProperties.set('loom.platform', 'neoforge')
+    for (loader in ['forge', 'neoforge']) {
+        if (project.name.endsWith("-${loader}")) project.extensions.extraProperties.set('loom.platform', loader)
     }
 }

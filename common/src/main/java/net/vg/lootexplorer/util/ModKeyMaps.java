@@ -5,12 +5,15 @@ import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+//? if >=1.21 {
 import net.minecraft.core.component.DataComponents;
+//? }
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemLore;
+//? if >=1.21 {
 import net.minecraft.world.item.component.SeededContainerLoot;
+//? }
 import net.vg.lootexplorer.Constants;
 import net.vg.lootexplorer.inventory.LootPreviewInventory;
 import net.vg.lootexplorer.inventory.LootPreviewMenu;
@@ -29,14 +32,22 @@ public class ModKeyMaps {
 
     public static final KeyMapping CUSTOM_KEYMAPPING = new KeyMapping(
             "key.copy_loot_table",
+            //? if >=26.3 {
+            /*InputConstants.Type.KEYBOARD,
+            *///? } else {
             InputConstants.Type.KEYSYM,
+            //? }
             InputConstants.KEY_O,
             LOOT_EXPLORER_CATEGORY
     );
 
     public static final KeyMapping PREVIEW_LOOT_TABLE_KEY = new KeyMapping(
             "key.preview_loot_table",
+            //? if >=26.3 {
+            /*InputConstants.Type.KEYBOARD,
+            *///? } else {
             InputConstants.Type.KEYSYM,
+            //? }
             InputConstants.KEY_INSERT,
             LOOT_EXPLORER_CATEGORY
     );
@@ -53,14 +64,19 @@ public class ModKeyMaps {
                 if (minecraft.player != null && minecraft.player.getMainHandItem() != null) {
                     ItemStack mainHandItem = minecraft.player.getMainHandItem();
 
-                    if (mainHandItem.has(DataComponents.LORE)) {
-                        ItemLore loreTag = mainHandItem.get(DataComponents.LORE);
-                        if (loreTag != null && !loreTag.lines().isEmpty()) {
-                            Component loreText = loreTag.lines().getFirst();
+                    if (!ItemPreviewData.lore(mainHandItem).isEmpty()) {
+                        List<Component> lore = ItemPreviewData.lore(mainHandItem);
+                        if (!lore.isEmpty()) {
+                            Component loreText = lore.get(0);
                             String loreString = loreText.getString();
 
                             loreString = net.minecraft.util.StringUtil.stripColor(loreString);
                             List<ItemStack> items = LootHandler.lootTableItemMap.get(loreString);
+                            if (items == null) {
+                                // A remote server owns its tables; use the existing optional protocol.
+                                NetworkHandler.requestLootPreview(loreString);
+                                continue;
+                            }
                             Constants.LOGGER.info(items.toString());
                             LootPreviewMenu menu = new LootPreviewMenu(0, minecraft.player.getInventory());
                             LootPreviewScreen screen = new LootPreviewScreen(menu, minecraft.player.getInventory(), Component.literal("Loot Preview"), items);
@@ -80,10 +96,10 @@ public class ModKeyMaps {
         if (minecraft.player != null && minecraft.player.getMainHandItem() != null) {
             ItemStack mainHandItem = minecraft.player.getMainHandItem();
 
-            if (mainHandItem.has(DataComponents.LORE)) {
-                ItemLore loreTag = mainHandItem.get(DataComponents.LORE);
-                if (loreTag != null && !loreTag.lines().isEmpty()) {
-                    Component loreText = loreTag.lines().getFirst();
+            if (!ItemPreviewData.lore(mainHandItem).isEmpty()) {
+                List<Component> lore = ItemPreviewData.lore(mainHandItem);
+                if (!lore.isEmpty()) {
+                    Component loreText = lore.get(0);
                     String loreString = loreText.getString();
 
                     loreString = net.minecraft.util.StringUtil.stripColor(loreString);
@@ -98,6 +114,7 @@ public class ModKeyMaps {
         }
     }
 
+    //? if >=1.21 {
     private static void handlePreviewLootTable(Minecraft minecraft) {
         if (minecraft.player != null && minecraft.player.getMainHandItem() != null) {
             Constants.LOGGER.info("Attempting Preview Loot Table");
@@ -106,7 +123,13 @@ public class ModKeyMaps {
             if (mainHandItem.has(DataComponents.CONTAINER_LOOT)) {
                 SeededContainerLoot containerLoot = mainHandItem.get(DataComponents.CONTAINER_LOOT);
                 if (containerLoot != null) {
-                    LootPreviewInventory.open(minecraft.player, containerLoot.lootTable());
+                    LootPreviewInventory.open(minecraft.player,
+                            //? if >=26.1 {
+                            containerLoot.lootTable().identifier()
+                            //? } else {
+                            /*containerLoot.lootTable().location()
+                            *///? }
+                    );
                 } else {
                     //? if >=26.1 {
                     minecraft.player.sendOverlayMessage(Component.literal("No loot table found for this item."));
@@ -123,4 +146,5 @@ public class ModKeyMaps {
             }
         }
     }
+    //? }
 }

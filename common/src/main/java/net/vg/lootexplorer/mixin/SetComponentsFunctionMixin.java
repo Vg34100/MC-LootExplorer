@@ -1,5 +1,6 @@
 package net.vg.lootexplorer.mixin;
 
+//? if >=1.21 {
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.world.level.storage.loot.functions.SetComponentsFunction;
 import org.spongepowered.asm.mixin.Mixin;
@@ -10,3 +11,4 @@ public interface SetComponentsFunctionMixin {
     @Accessor("components")
     DataComponentPatch getComponents();
 }
+//? }

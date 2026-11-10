@@ -1,0 +1,46 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+#issueTrackerURL = ""
+license = "MIT"
+
+[[mods]]
+modId = "lootexplorer"
+version = "${version}"
+displayName = "LootExplorer"
+displayTest = "IGNORE_ALL_VERSION"
+authors = "VgLevelUp"
+description = '''
+
+'''
+logoFile = "icon.png"
+
+[[dependencies.lootexplorer]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lootexplorer]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lootexplorer]]
+modId = "architectury"
+mandatory = true
+versionRange = "[${architectury_api_version},)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.lootexplorer]]
+modId = "jei"
+mandatory = false
+versionRange = "[${jei_version},)"
+ordering = "NONE"
+side = "CLIENT"
+
+[features.lootexplorer]
+javaVersion = "[${java_version},)"

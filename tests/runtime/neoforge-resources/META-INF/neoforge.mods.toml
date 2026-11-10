@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[2,)"
+license="MIT"
+[[mods]]
+modId="lootexplorer_port_checks"
+version="1"
+displayName="LootExplorer development assertions"
+[[dependencies.lootexplorer_port_checks]]
+modId="lootexplorer"
+type="required"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"

@@ -13,7 +13,7 @@ import java.util.List;
 
 @JeiPlugin
 public final class LootExplorerJeiPlugin implements IModPlugin {
-    private static final Identifier PLUGIN_ID = Identifier.fromNamespaceAndPath(LootExplorer.MOD_ID, "jei_plugin");
+    private static final Identifier PLUGIN_ID = net.vg.lootexplorer.util.ModIds.id(LootExplorer.MOD_ID, "jei_plugin");
 
     @Override
     public Identifier getPluginUid() {

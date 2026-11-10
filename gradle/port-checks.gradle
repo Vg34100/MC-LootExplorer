@@ -1,0 +1,20 @@
+// A separate runtime mod verifies real game objects and server lifecycle.
+// It is absent unless explicitly requested and is never part of main/JAR tasks.
+def checkSources = sourceSets.create('portChecks') {
+    java.srcDirs = [rootProject.file('tests/runtime/common'), rootProject.file("tests/runtime/${project.name.tokenize('-').last()}")]
+    resources.srcDirs = [rootProject.file("tests/runtime/${project.name.tokenize('-').last()}-resources")]
+    compileClasspath += sourceSets.main.output
+    runtimeClasspath += sourceSets.main.output
+}
+configurations.portChecksCompileClasspath.extendsFrom(configurations.compileClasspath)
+configurations.portChecksRuntimeClasspath.extendsFrom(configurations.runtimeClasspath)
+loom {
+    mods {
+        lootexplorer { sourceSet sourceSets.main }
+        lootexplorer_port_checks { sourceSet checkSources }
+    }
+    runs {
+        server { source checkSources }
+    }
+}
+tasks.named('runServer') { dependsOn tasks.named('portChecksClasses') }

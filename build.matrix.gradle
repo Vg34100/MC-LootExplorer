@@ -21,6 +21,8 @@ def minecraftVersion = required('minecraft_version')
 def javaVersion = required('java_version') as int
 def legacy = required('loom_generation') == 'legacy'
 def isFabric = loader == 'fabric'
+def isForge = loader == 'forge'
+def earlyNeoForgeCompat = loader == 'neoforge' && stonecutter.eval(minecraftVersion, '>=26.1 <26.1.2')
 
 
 group = rootProject.maven_group
@@ -28,7 +30,8 @@ version = rootProject.mod_version
 apply plugin: legacy ? 'dev.architectury.loom' : 'dev.architectury.loom-no-remap'
 // Each node already owns common + loader sources. Architectury API remains a
 // dependency, but no common-project transformation/Gradle plugin is required.
-if (!isFabric) loom { neoForge {} }
+if (isForge) loom { forge {} }
+else if (!isFabric) loom { neoForge {} }
 if (legacy) loom { silentMojangMappingsLicense() }
 
 // Exact, bidirectional Minecraft class rename; behavior remains in Java.
@@ -43,6 +46,7 @@ base { archivesName = "${rootProject.archives_name}-${loader}-${minecraftVersion
 repositories {
     maven { url 'https://maven.terraformersmc.com/releases/' }
     maven { url 'https://maven.neoforged.net/releases/' }
+    maven { url 'https://maven.minecraftforge.net/' }
     maven { url 'https://maven.blamejared.com/' }
 }
 
@@ -139,20 +143,26 @@ dependencies {
     if (isFabric) {
         modDependency("net.fabricmc:fabric-loader:${required('fabric_loader_version')}")
         modDependency("net.fabricmc.fabric-api:fabric-api:${required('fabric_api_version')}")
+    } else if (isForge) {
+        forge "net.minecraftforge:forge:${minecraftVersion}-${required('forge_version')}"
     } else {
         neoForge "net.neoforged:neoforge:${required('neoforge_version')}"
-        // Common client annotations compile against Fabric Loader on both loaders.
-        compileOnly "net.fabricmc:fabric-loader:${required('fabric_loader_version')}"
     }
     modDependency("dev.architectury:architectury-${loader}:${required('architectury_api_version')}")
     def compileDependency = { notation -> add(legacy ? 'modCompileOnly' : 'compileOnly', notation) }
-    def runtimeDependency = { notation -> add(legacy ? 'modRuntimeOnly' : 'runtimeOnly', notation) }
+    // Installable optional mod JARs bundle their APIs. Their publication POMs
+    // also expose compile-only annotation libraries that are not runtime mods.
+    def runtimeDependency = { notation ->
+        add(legacy ? 'modRuntimeOnly' : 'runtimeOnly', notation) { transitive = false }
+    }
     if (isFabric) {
         compileDependency("com.terraformersmc:modmenu:${required('modmenu_version')}")
         runtimeDependency("com.terraformersmc:modmenu:${required('modmenu_version')}")
     }
     compileDependency("mezz.jei:jei-${minecraftVersion}-common-api:${required('jei_version')}")
-    runtimeDependency("mezz.jei:jei-${minecraftVersion}-${loader}:${required('jei_version')}")
+    if (providers.gradleProperty('jei_runtime').getOrElse('true').toBoolean()) {
+        runtimeDependency("mezz.jei:jei-${minecraftVersion}-${loader}:${required('jei_version')}")
+    }
 }
 apply from: rootProject.file('gradle/dev-integrations.gradle')
 configureDevIntegrations(matrix, legacy)
@@ -176,26 +186,35 @@ tasks.named('sourcesJar') { dependsOn generateJava }
 
 def metadata = [
     version: project.version,
+    resource_pack_format: matrix.getProperty('resource_pack_format', ''),
     minecraft_version: minecraftVersion,
     java_version: javaVersion,
     architectury_api_version: required('architectury_api_version'),
-    fabric_loader_version: required('fabric_loader_version'),
+    fabric_loader_version: matrix.getProperty('fabric_loader_version', ''),
+    forge_version: matrix.getProperty('forge_version', ''),
+    fml_loader_major: matrix.getProperty('fml_loader_version', '2').tokenize('.')[0],
     neoforge_version: matrix.getProperty('neoforge_version', ''),
     jei_version: required('jei_version'),
-    neoforge_icon_field: stonecutter.eval(minecraftVersion, '>=26.2') ? 'iconFile' : 'logoFile'
+    neoforge_icon_field: stonecutter.eval(minecraftVersion, '>=26.2') ? 'iconFile' : 'logoFile',
+    early_neoforge_mixin: earlyNeoForgeCompat ? '[[mixins]]\nconfig = "lootexplorer-early-neoforge.mixins.json"\n' : ''
 ]
 processResources {
+    if (!earlyNeoForgeCompat) exclude 'lootexplorer-early-neoforge.mixins.json'
     // Canonical resources take priority over checked-in datagen duplicates.
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     inputs.properties(metadata)
-    filesMatching(['fabric.mod.json', 'META-INF/neoforge.mods.toml', '*.mixins.json']) { expand(metadata) }
+    filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', '*.mixins.json', 'pack.mcmeta']) { expand(metadata) }
 }
 
 loom {
-    runs.configureEach { runDir = rootProject.file("runs/${project.name}/${name}") }
+    runs.configureEach {
+        runDir = providers.gradleProperty('validation_run_dir').getOrElse(rootProject.file("runs/${project.name}/${name}").absolutePath)
+    }
+    if (isForge) forge { mixinConfig 'lootexplorer.mixins.json' }
 }
 tasks.named('jar') {
     destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${project.name}")
+    if (isForge) manifest.attributes('MixinConfigs': 'lootexplorer.mixins.json')
     from(rootProject.file('LICENSE.txt')) { rename { "${it}_${rootProject.archives_name}" } }
 }
 if (legacy) {
@@ -208,7 +227,7 @@ tasks.register('packageTarget') {
 
 // Stage ordinary installed mods for either production launcher. Dependencies
 // come from their original artifacts, never Loom's remapped development cache.
-if (isFabric || loader == 'neoforge') {
+if (isFabric || loader in ['forge', 'neoforge']) {
     def smokeRun = layout.dir(providers.gradleProperty('release_smoke_dir').map { rootProject.file(it) })
     def smokeDependencies = configurations.create('releaseSmokeMods') {
         canBeConsumed = false
@@ -251,5 +270,27 @@ if (isFabric || loader == 'neoforge') {
                 ? '-Xlog:class+load=info,class+init=info:file=class-load-%p.log:uptime,level,tags'
                 : '-Xlog:class+load=info:file=class-load-%p.log:uptime,level,tags')
         programArgs.addAll('--username', 'ReleaseSmoke', '--accessToken', '0', '--version', minecraftVersion)
+    }
+}
+
+// Opt-in native checks are a separate development mod, never release contents.
+if (providers.gradleProperty('port_checks').isPresent()) {
+    apply from: rootProject.file('gradle/port-checks.gradle')
+}
+
+if (earlyNeoForgeCompat) {
+    def checks = tasks.register('compileEarlyNeoForgeChecks', JavaCompile) {
+        dependsOn 'classes'
+        source rootProject.fileTree('tests/compat') { include '**/*.java' }
+        classpath = sourceSets.main.runtimeClasspath
+        destinationDirectory = layout.buildDirectory.dir('compat-checks')
+        javaCompiler = javaToolchains.compilerFor(java.toolchain)
+    }
+    tasks.register('verifyEarlyNeoForgeCompat', JavaExec) {
+        group = 'verification'
+        dependsOn checks
+        classpath = files(checks.map { it.destinationDirectory }) + sourceSets.main.runtimeClasspath
+        javaLauncher = javaToolchains.launcherFor(java.toolchain)
+        mainClass = 'net.vg.lootexplorer.neoforge.compat.EarlyNeoForgeChecks'
     }
 }

@@ -1,21 +1,29 @@
 package net.vg.lootexplorer.networking;
 
+//? if >=1.21 {
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+//? }
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import net.vg.lootexplorer.Constants;
+import net.vg.lootexplorer.util.ModIds;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LootPreviewResponsePayload implements CustomPacketPayload {
+public class LootPreviewResponsePayload
+        //? if >=1.21 {
+        implements CustomPacketPayload
+        //? }
+{
     private final String lootTablePath;
     private final List<ItemStack> items;
 
-    public static final Type<LootPreviewResponsePayload> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(Constants.MOD_ID, "loot_preview_response"));
+    public static final Identifier ID = ModIds.id("loot_preview_response");
+
+    //? if >=1.21 {
+    public static final Type<LootPreviewResponsePayload> TYPE = new Type<>(ID);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, LootPreviewResponsePayload> CODEC = StreamCodec.of(
             (buf, payload) -> {
@@ -28,6 +36,8 @@ public class LootPreviewResponsePayload implements CustomPacketPayload {
                 return new LootPreviewResponsePayload(path, items);
             }
     );
+
+    //? }
 
     public LootPreviewResponsePayload(String lootTablePath, List<ItemStack> items) {
         this.lootTablePath = lootTablePath;
@@ -42,8 +52,26 @@ public class LootPreviewResponsePayload implements CustomPacketPayload {
         return items;
     }
 
+    //? if >=1.21 {
     @Override
     public Type<?> type() {
         return TYPE;
     }
+    //? }
+    //? if <1.21 {
+    /*public void write(net.minecraft.network.FriendlyByteBuf buffer) {
+        buffer.writeUtf(lootTablePath);
+        buffer.writeVarInt(items.size());
+        items.forEach(buffer::writeItem);
+    }
+
+    public static LootPreviewResponsePayload read(net.minecraft.network.FriendlyByteBuf buffer) {
+        String path = buffer.readUtf();
+        int count = buffer.readVarInt();
+        if (count < 0 || count > 32768) throw new IllegalArgumentException("Invalid preview item count");
+        List<ItemStack> items = new ArrayList<>();
+        for (int i = 0; i < count; i++) items.add(buffer.readItem());
+        return new LootPreviewResponsePayload(path, items);
+    }
+    *///? }
 }

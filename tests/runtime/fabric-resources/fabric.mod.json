@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "lootexplorer_port_checks",
+  "version": "1",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.vg.lootexplorer.validation.PortCheckMod"
+    ]
+  },
+  "depends": {
+    "lootexplorer": "*"
+  }
+}

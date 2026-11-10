@@ -58,7 +58,7 @@ public final class LootExplorerConfigScreen extends Screen {
     private void addPanel(PathPanel panel, int left, int width) {
         panel.fields.clear();
         int pageCount = panel.pageCount();
-        panel.page = Math.clamp(panel.page, 0, pageCount - 1);
+        panel.page = Math.max(0, Math.min(panel.page, pageCount - 1));
         int start = panel.page * ROWS_PER_PAGE;
         int end = Math.min(panel.paths.size(), start + ROWS_PER_PAGE);
         int rowWidth = width - 24;
@@ -133,7 +133,7 @@ public final class LootExplorerConfigScreen extends Screen {
     //? } else {
     /*@Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        renderLegacyBackground(guiGraphics, mouseX, mouseY, partialTick);
         int gap = 8;
         int panelWidth = Math.min(210, (this.width - 32 - gap) / 2);
         int panelLeft = (this.width - (panelWidth * 2 + gap)) / 2;
@@ -142,6 +142,17 @@ public final class LootExplorerConfigScreen extends Screen {
         guiGraphics.drawCenteredString(this.font, containers.title, panelLeft + panelWidth / 2, 56, 0xFFFFFF);
         guiGraphics.drawCenteredString(this.font, brushables.title, panelLeft + panelWidth + gap + panelWidth / 2, 56, 0xFFFFFF);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+    *///? }
+
+    //? if >=1.21 && <26.1 {
+    /*private void renderLegacyBackground(GuiGraphics graphics, int mouseX, int mouseY, float tick) {
+        renderBackground(graphics, mouseX, mouseY, tick);
+    }
+    *///? }
+    //? if <1.21 {
+    /*private void renderLegacyBackground(GuiGraphics graphics, int mouseX, int mouseY, float tick) {
+        renderBackground(graphics);
     }
     *///? }
 
