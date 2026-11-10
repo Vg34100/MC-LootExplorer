@@ -20,7 +20,7 @@ import java.util.List;
 
 public class LootPreviewInventory {
 
-    public static void open(Player player, ResourceKey<LootTable> lootTableKey) {
+    public static void open(Player player, net.minecraft.resources.Identifier lootTableId) {
         Constants.LOGGER.info("Attempt Open before serverPlayer");
 //        ServerLevel level = serverPlayer.serverLevel();
 
@@ -30,17 +30,15 @@ public class LootPreviewInventory {
 //            LootTable lootTable = level.getServer().getLootData().getLootTable(lootTableKey.location());
 
 
-        LootTable lootTable = player.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
+        LootTable lootTable = net.vg.lootexplorer.util.LootTables.get(player.level().getServer(), lootTableId);
 
 
 
         if (lootTable != null) {
             SimpleContainer container = new SimpleContainer(27);
 
-            LootParams lootParams = new LootParams.Builder(level.getServer().overworld())
-                    .withParameter(LootContextParams.ORIGIN, player.position())
-                    .withLuck(player.getLuck())
-                    .create(lootTable.getParamSet());
+            LootParams lootParams = net.vg.lootexplorer.util.LootGenerator.createLootParams(
+                    player, level.getServer().overworld(), lootTable);
 
             List<ItemStack> loot = lootTable.getRandomItems(lootParams);
 

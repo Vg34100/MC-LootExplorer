@@ -13,7 +13,7 @@ import java.util.List;
 
 // Legacy uses immediate rendering and positional input; layout and scroll behavior match the canonical screen.
 public class LootPreviewScreen extends AbstractContainerScreen<LootPreviewMenu> {
-    private static final ResourceLocation CONTAINER_BACKGROUND = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/creative_inventory/tab_items.png");
+    private static final ResourceLocation CONTAINER_BACKGROUND = net.vg.lootexplorer.util.ModIds.id("minecraft", "textures/gui/container/creative_inventory/tab_items.png");
     private static final int ROWS = 7;
     private static final int COLS = 9;
     private float scrollOffs;
@@ -47,7 +47,11 @@ public class LootPreviewScreen extends AbstractContainerScreen<LootPreviewMenu> 
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        //? if >=1.21 {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        //? } else {
+        /*this.renderBackground(guiGraphics);
+        *///? }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
@@ -134,7 +138,11 @@ public class LootPreviewScreen extends AbstractContainerScreen<LootPreviewMenu> 
     }
 
     @Override
+    //? if >=1.21 {
     public boolean mouseScrolled(double d, double e, double f, double g) {
+    //? } else {
+    /*public boolean mouseScrolled(double d, double e, double g) {
+    *///? }
         if (this.canScroll && !items.isEmpty()) {
             int maxRows = Math.max(1, (int) Math.ceil((double) items.size() / COLS) - ROWS);
             float delta = (float)g / (float)maxRows;

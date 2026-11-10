@@ -3,10 +3,10 @@ package net.vg.lootexplorer;
 import net.vg.lootexplorer.item.ModItemGroups;
 import net.vg.lootexplorer.config.LootExplorerConfig;
 import net.vg.lootexplorer.util.LootHandler;
-import net.vg.lootexplorer.util.ModKeyMaps;
+import net.vg.lootexplorer.util.NetworkHandler;
 
 public final class LootExplorer {
-    public static final String MOD_ID = "lootexplorer";
+    public static final String MOD_ID = Constants.MOD_ID;
 
     public static void init() {
         // Write common init code here.
@@ -20,7 +20,7 @@ public final class LootExplorer {
 
         // Register the LootHandler
         LootHandler.register();
-        ModKeyMaps.register();
+        NetworkHandler.register();
 
         Constants.LOGGER.info("Loot Explorer initialized");
     }

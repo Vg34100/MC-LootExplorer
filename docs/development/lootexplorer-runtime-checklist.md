@@ -1,6 +1,6 @@
 # LootExplorer runtime regression checklist
 
-Run the feature checks on 26.2 Fabric/NeoForge and 1.21.1 Fabric/NeoForge. Add a target only when its implementation has a distinct compatibility boundary.
+For this port, run feature checks on 1.20.1 Fabric/Forge and 26.3 Fabric/NeoForge. The original twelve targets retain their earlier runtime evidence, with new aggregate compile/package checks.
 
 Packaged startup smoke proves the exact release JAR, loader bootstrap, initial resource reload and first screen. It does not establish the in-world/UI checks below.
 
@@ -9,7 +9,7 @@ Packaged startup smoke proves the exact release JAR, loader bootstrap, initial r
 - Hold the same preview and press O (Copy Lore). Confirm the copied text is the table identifier. Verify both keys appear under Loot Explorer in Controls and can be rebound.
 - With a preview containing more than 63 items, exercise mouse-wheel scrolling and scrollbar dragging/release. Confirm the item grid and hover tooltips follow the selected rows.
 - Close with Escape, reopen the preview, change GUI scale and resize the window. Check clipping, alignment, mouse hitboxes and back navigation.
-- Open settings through Fabric Mod Menu or NeoForge's mod configuration button. Type paths, add/remove rows, switch pages, then use Done, Cancel and Escape. Restart the world after saving and confirm discovery uses the saved paths.
+- Open settings through Fabric Mod Menu or Forge/NeoForge's mod configuration button. Type paths, add/remove rows, switch pages, then use Done, Cancel and Escape. Restart the world after saving and confirm discovery uses the saved paths.
 - Use F3+T with the client active, then reopen settings and the loot preview. Check for crashes and missing textures/text. The baseline discovers loot when a world starts; configuration/resource changes are checked again on the next world start.
 - With JEI installed, confirm generated preview stacks are hidden from its ingredient list while LootExplorer's creative tabs remain usable. Also check startup and preview behavior without JEI; JEI and Mod Menu remain optional.
 - Close/reopen the world and repeat a known loot lookup. Review the log for parsing/registry errors. Datapack or mod tables should follow the configured container/brushable paths.
@@ -18,4 +18,8 @@ The restored optional development mods/datapacks, their target coverage, and
 specific 26.1.1 loot checks are documented in
 [LootExplorer development integrations](lootexplorer-dev-integrations.md).
 
-LootExplorer is client-focused but its lookup needs an integrated server. Remote-server table discovery is not established by this checklist. Networking helper classes and mixin helper classes exist in the baseline but are not registered by its entrypoints/configuration.
+Common initialization now registers loot discovery and C2S packets on clients and dedicated servers. The S2C receiver and screens initialize only on the physical client. Mixins remain dormant, except any separately documented pinned-loader repair.
+
+For multiplayer, install LootExplorer on a dedicated server and a matching client. Obtain a preview stack carrying a known table identifier and press Insert: when that table is absent from the local map, the existing request/response protocol should open the sampled preview. Check both chest and archaeology tables, then repeat a request/close cycle. Also join a server without LootExplorer and confirm the optional channel is not sent. Packet codec round-trips and server startup are automated; actual two-process packet exchange and this UI interaction remain manual. Remote creative-tab table synchronization is outside the existing protocol.
+
+Native development assertions can be rerun narrowly with `python scripts/check-port-runtime.py <matrix-target>`. They use a separate test mod, isolated temporary worlds, accepted test EULAs, a bounded timeout and the existing wrapper's owned shutdown. They require both Minecraft's Done milestone and the assertion marker before passing. No test classes or fixture payloads are included in release JARs.

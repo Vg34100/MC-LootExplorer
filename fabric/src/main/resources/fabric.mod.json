@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "icon": "assets/lootexplorer/icon.png",
-  "environment": "client",
+  "environment": "*",
   "entrypoints": {
     "main": [
       "net.vg.lootexplorer.fabric.LootExplorerFabric"

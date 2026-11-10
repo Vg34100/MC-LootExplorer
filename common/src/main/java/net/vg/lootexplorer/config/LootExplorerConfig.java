@@ -81,10 +81,11 @@ public final class LootExplorerConfig {
     }
 
     private static boolean includes(String resourcePath, List<String> paths) {
-        if (!resourcePath.startsWith("loot_table/")) {
+        String directory = resourcePath.startsWith("loot_tables/") ? "loot_tables/" : "loot_table/";
+        if (!resourcePath.startsWith(directory)) {
             return false;
         }
-        String relativePath = resourcePath.substring("loot_table/".length());
+        String relativePath = resourcePath.substring(directory.length());
         return paths.stream().anyMatch(relativePath::startsWith);
     }
 

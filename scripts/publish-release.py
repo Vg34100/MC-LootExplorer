@@ -36,12 +36,20 @@ def dependencies(metadata, loader, pins, config):
     else:
         blocks = re.findall(r'\[\[dependencies\.' + re.escape(config['mod_id']) + r'\]\](.*?)(?=\n\[|\Z)', metadata, re.DOTALL)
         if not blocks:
-            raise ValueError('Missing NeoForge dependency declarations for ' + config['mod_id'])
+            raise ValueError('Missing ' + ('Forge' if loader == 'forge' else 'NeoForge') + ' dependency declarations for ' + config['mod_id'])
         declared = {}
         for block in blocks:
             fields = dict(re.findall(r'^\s*(\w+)\s*=\s*"([^"\n]*)"', block, re.MULTILINE))
-            declared[fields["modId"]] = fields["type"]
-    for key in ("minecraft", "java", "fabricloader", "neoforge"):
+            if fields['modId'] in declared:
+                raise ValueError('Duplicate loader dependency: ' + fields['modId'])
+            if loader == 'forge':
+                mandatory = re.search(r'^\s*mandatory\s*=\s*(true|false)\s*$', block, re.MULTILINE)
+                if not mandatory or 'type' in fields:
+                    raise ValueError('Forge dependencies require mandatory=true/false, not NeoForge type')
+                declared[fields['modId']] = 'required' if mandatory[1] == 'true' else 'optional'
+            else:
+                declared[fields['modId']] = fields['type']
+    for key in ("minecraft", "java", "fabricloader", "forge", "neoforge"):
         declared.pop(key, None)
     result = []
     for mod_id, kind in sorted(declared.items()):
@@ -77,13 +85,13 @@ def publication_plan(root=ROOT):
     for matrix in sorted((root / "gradle/matrix").glob("*.properties")):
         target = properties(matrix)
         minecraft, loader = target["minecraft_version"], target["loader"]
-        if matrix.stem != f"{minecraft}-{loader}" or loader not in ("fabric", "neoforge"):
+        if matrix.stem != f"{minecraft}-{loader}" or loader not in ("fabric", "forge", "neoforge"):
             raise ValueError(f"Invalid publishing target: {matrix}")
         values = dict(mod_version=version, mod_name=config['mod_name'], minecraft_version=minecraft, loader=loader,
-                      loader_name={"fabric": "Fabric", "neoforge": "NeoForge"}[loader])
+                      loader_name={"fabric": "Fabric", "forge": "Forge", "neoforge": "NeoForge"}[loader])
         artifact = f"build/libs/{matrix.stem}/{pins['archives_name']}-{loader}-{minecraft}-{version}.jar"
         source = root / loader / "src/main/resources" / (
-            "fabric.mod.json" if loader == "fabric" else "META-INF/neoforge.mods.toml")
+            "fabric.mod.json" if loader == "fabric" else "META-INF/mods.toml" if loader == "forge" else "META-INF/neoforge.mods.toml")
         metadata = source.read_text(encoding="utf-8")
         if loader == 'fabric':
             environment = json.loads(metadata).get('environment', '*')
@@ -91,13 +99,13 @@ def publication_plan(root=ROOT):
                 raise ValueError('Invalid Fabric environment: ' + environment)
             environments = ['Client', 'Server'] if environment == '*' else [environment.title()]
         else:
-            # LootExplorer's entrypoint and every dependency are client-only.
-            sides = re.findall(r'^\s*side\s*=\s*"([^"]+)"', metadata, re.MULTILINE)
-            bootstrap = root / 'neoforge/src/main/java/net/vg/lootexplorer/neoforge/LootExplorerNeoForge.java'
-            if not sides or set(sides) != {'CLIENT'} or 'dist = Dist.CLIENT' not in bootstrap.read_text():
-                raise ValueError('NeoForge client-only publication differs from loader metadata/bootstrap')
-            environments = ['Client']
-        if environments != [config['environment'].title()]:
+            sides = re.findall(r'^\s*side\s*=\s*"([^\"]+)"', metadata, re.MULTILINE)
+            bootstrap = root / loader / 'src/main/java/net/vg/lootexplorer' / loader / ('LootExplorerForge.java' if loader == 'forge' else 'LootExplorerNeoForge.java')
+            if not sides or any(side not in ('BOTH', 'CLIENT') for side in sides) or 'dist = Dist.CLIENT' in bootstrap.read_text():
+                raise ValueError('Common bootstrap/dependencies differ from publication environment')
+            environments = ['Client', 'Server']
+        expected = {'both': ['Client', 'Server'], 'client': ['Client'], 'server': ['Server']}[config['environment']]
+        if environments != expected:
             raise ValueError('Publication environment differs from actual loader metadata')
         entries.append(dict(target=matrix.stem, artifact=artifact, minecraft=minecraft, loader=loader,
                             java=int(target["java_version"]), environments=environments,
@@ -139,7 +147,7 @@ def verified_plan(root=ROOT):
         if artifact.resolve() != (root / row["artifact"]).resolve():
             raise ValueError(f"Unexpected verified artifact: {artifact}")
         with ZipFile(artifact) as jar:
-            meta = jar.read("fabric.mod.json" if row["loader"] == "fabric" else "META-INF/neoforge.mods.toml").decode()
+            meta = jar.read({"fabric": "fabric.mod.json", "forge": "META-INF/mods.toml", "neoforge": "META-INF/neoforge.mods.toml"}[row["loader"]]).decode()
         actual = dependencies(meta, row["loader"], properties(matrix), config)
         if actual != row["dependencies"]:
             raise ValueError(f"Packaged dependency metadata differs from publication plan: {row['target']}")
@@ -159,10 +167,9 @@ def check_modrinth_project(data, dry_run=False):
     if any(project.get(key) != value for key, value in data['modrinth_environments'].items()):
         legacy = data['modrinth_legacy_environments']
         if dry_run and all(project.get(key) == value for key, value in legacy.items()):
-            print('MODRINTH PROJECT SETTING REQUIRED before real upload: Client-only '
-                  '(client_side=required, server_side=unsupported). Historical public labels remain unchanged by this dry-run.')
+            print('MODRINTH PROJECT SETTING REQUIRED before real upload: ' + str(data['modrinth_environments']) + '. This dry-run changes no public labels.')
         else:
-            raise ValueError('Modrinth project environments differ; set the public project to Client-only before real upload')
+            raise ValueError('Modrinth project environments differ from gradle/publishing.properties; correct them before real upload')
 
 
 def check_duplicates(data, existing=None):
@@ -254,7 +261,7 @@ def check_curseforge_duplicates(data, existing=None):
             names = [file.get('name', ''), file.get('display', '')]
             semantic = (any(has_mod_version(name, data['mod_version']) for name in names)
                         and row['minecraft'] in file.get('versions', [])
-                        and {'fabric': 'Fabric', 'neoforge': 'NeoForge'}[row['loader']] in file.get('versions', []))
+                        and {'fabric': 'Fabric', 'forge': 'Forge', 'neoforge': 'NeoForge'}[row['loader']] in file.get('versions', []))
             if file.get('name') in (row['version_name'], Path(row['artifact']).name) or file.get('display') == row['version_name'] or semantic:
                 raise ValueError(f'Existing CurseForge file for {row["target"]}: {file["id"]}; refusing duplicate upload')
 

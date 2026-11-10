@@ -8,17 +8,17 @@ Publishing is deliberately separate from validation. The presence of credentials
 
 The completed conversion baseline is commit `967d0c57474a73a402f8994786b8642213b6a9c5` on `feature/26.1.2-migration`. Public projects are [Modrinth Loot Explorer](https://modrinth.com/mod/lootexplorer) (`pVa5DTcR`) and [CurseForge Loot Explorer](https://www.curseforge.com/minecraft/mc-mods/loot-explorer) (`1072637`). The current GitHub repository is [Vg34100/MC-LootExplorer](https://github.com/Vg34100/MC-LootExplorer); the public projects' older source links still use `Minecraft-LootExplorer`.
 
-The public release audit found 1.0.1 on both platforms, no newer public version, and no GitHub releases. The completed source baseline was 1.0.2; publishing preparation advances it to 1.0.3. Existing public names use **Loot Explorer**. No public description or historical release is changed by these helpers.
+Loot Explorer 1.0.3 was published from `2bb517d141478d5efa7476c17d568cfc387e759e` with twelve targets. Those public files remain unchanged. The 1.0.4 release includes the completed 1.20.1/26.3 port and discovers sixteen targets from the matrix. Artifact filenames use the lowercase `lootexplorer` prefix.
 
-Current Fabric metadata declares `environment=client`; NeoForge's entrypoint uses `Dist.CLIENT` and dependency sides are `CLIENT`. Publication plans therefore declare **Client-only**. Integrated-server resource access does not imply dedicated-server support.
+The current source separates common loot discovery/networking from physical-client keybinds, receivers and config screens. Fabric now declares `environment=*`; Forge/NeoForge use common bootstraps with client-only UI initialization. The publication plan therefore describes Client + Server, with Modrinth `client_side=required, server_side=optional`. Installing the server component is optional; it serves explicit preview requests. Full remote creative-tab discovery is not implemented by this port.
 
-The initial public Modrinth audit found `client_side=required, server_side=required`. On 2026-10-07, the authorized correction changed only `server_side`; the official API verified `client_side=required, server_side=unsupported` and `environment=["client_only"]`. Protected project metadata and existing release IDs were unchanged. Dry-runs can recognize the historical pair, but real uploads require the intended client-only setting. No publishing helper automatically edits project settings or descriptions. Existing CurseForge files have Client/Server labels; newly prepared files explicitly select only Client.
+The prior authorized Modrinth correction set `client_side=required, server_side=unsupported` for the published client-only release. The 1.0.4 publishing session updates only the server label to `optional`, matching the tested common bootstrap. The publisher refuses mismatched public settings; it never edits settings or descriptions automatically.
 
 | Production relation | Targets | Modrinth project | CurseForge slug | Kind |
 | --- | --- | --- | --- | --- |
-| Architectury API | Both loaders | `lhGA9TYQ` | `architectury-api` | Required |
+| Architectury API | All loaders | `lhGA9TYQ` | `architectury-api` | Required |
 | Fabric API | Fabric | `P7dR8mSH` | `fabric-api` | Required |
-| JEI | Both loaders | `u6dRKJwZ` | `jei` | Optional |
+| JEI | All loaders | `u6dRKJwZ` | `jei` | Optional |
 | Mod Menu | Fabric | `mOgUt4GM` | `modmenu` | Optional |
 
 These relations are derived from canonical loader metadata and rechecked against each packaged JAR. Better Archeology, Resourceful Config, ExtraChests, Iron Chests, Dungeons and Taverns, and Fluffy's Enchants are development fixtures only. Their pins and local payloads create no publication relation, embedded JAR, external classes, or foreign resource namespace. Production smoke staging rejects dependencies from the development configuration. The GitHub build disables these fixtures with `-Pdev_integrations=false`.
@@ -105,7 +105,7 @@ Publish one file per matrix target with exact:
 
 - installable JAR;
 - Minecraft version;
-- Fabric/NeoForge loader;
+- Fabric/Forge/NeoForge loader;
 - Java generation where CurseForge metadata supports it;
 - Client/Server environment;
 - release type;

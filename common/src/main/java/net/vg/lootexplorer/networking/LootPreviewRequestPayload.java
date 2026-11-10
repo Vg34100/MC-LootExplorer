@@ -1,16 +1,24 @@
 package net.vg.lootexplorer.networking;
 
+//? if >=1.21 {
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+//? }
 import net.minecraft.resources.Identifier;
-import net.vg.lootexplorer.Constants;
+import net.vg.lootexplorer.util.ModIds;
 
-public class LootPreviewRequestPayload implements CustomPacketPayload {
+public class LootPreviewRequestPayload
+        //? if >=1.21 {
+        implements CustomPacketPayload
+        //? }
+{
     private final String lootTablePath;
 
-    public static final Type<LootPreviewRequestPayload> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(Constants.MOD_ID, "loot_preview_request"));
+    public static final Identifier ID = ModIds.id("loot_preview_request");
+
+    //? if >=1.21 {
+    public static final Type<LootPreviewRequestPayload> TYPE = new Type<>(ID);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, LootPreviewRequestPayload> CODEC = StreamCodec.of(
             (buf, payload) -> {
@@ -21,6 +29,8 @@ public class LootPreviewRequestPayload implements CustomPacketPayload {
             }
     );
 
+    //? }
+
     public LootPreviewRequestPayload(String lootTablePath) {
         this.lootTablePath = lootTablePath;
     }
@@ -29,8 +39,10 @@ public class LootPreviewRequestPayload implements CustomPacketPayload {
         return lootTablePath;
     }
 
+    //? if >=1.21 {
     @Override
     public Type<?> type() {
         return TYPE;
     }
+    //? }
 }

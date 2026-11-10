@@ -53,6 +53,6 @@ public final class ModCompat {
     }
 
     private static Identifier id(String namespace, String path) {
-        return Identifier.fromNamespaceAndPath(namespace, path);
+        return net.vg.lootexplorer.util.ModIds.id(namespace, path);
     }
 }
